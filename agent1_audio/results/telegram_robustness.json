@@ -1,0 +1,40 @@
+{
+  "clean WAV": {
+    "macro_f1": 0.717,
+    "accuracy": 0.788,
+    "macro_f1_with_context": 0.739,
+    "per_class_f1": {
+      "bad_ignition": 1.0,
+      "belt": 0.98,
+      "dead_battery": 0.74,
+      "knock": 0.22,
+      "low_oil": 0.84,
+      "misfire": 0.65,
+      "normal": 0.86,
+      "normal_brakes": 0.6,
+      "normal_startup": 0.74,
+      "power_steering": 0.78,
+      "tappet": 0.46,
+      "worn_brakes": 0.74
+    }
+  },
+  "Opus 16k": {
+    "macro_f1": 0.583,
+    "accuracy": 0.652,
+    "macro_f1_with_context": 0.685,
+    "per_class_f1": {
+      "bad_ignition": 0.75,
+      "belt": 0.95,
+      "dead_battery": 0.6,
+      "knock": 0.22,
+      "low_oil": 0.56,
+      "misfire": 0.57,
+      "normal": 0.73,
+      "normal_brakes": 0.33,
+      "normal_startup": 0.62,
+      "power_steering": 0.69,
+      "tappet": 0.29,
+      "worn_brakes": 0.69
+    }
+  }
+}
