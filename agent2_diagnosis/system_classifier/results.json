@@ -1,0 +1,178 @@
+{
+ "labels": [
+  "brakes",
+  "electrical",
+  "engine",
+  "fuel",
+  "transmission"
+ ],
+ "n_train": 11444,
+ "n_val": 1431,
+ "n_test": 1433,
+ "tfidf_logreg": {
+  "accuracy": 0.8625,
+  "macro_f1": 0.8597,
+  "per_class_f1": {
+   "brakes": 0.919,
+   "electrical": 0.824,
+   "engine": 0.789,
+   "fuel": 0.866,
+   "transmission": 0.901
+  },
+  "confusion_matrix": {
+   "labels": [
+    "brakes",
+    "electrical",
+    "engine",
+    "fuel",
+    "transmission"
+   ],
+   "rows_true_cols_pred": [
+    [
+     113,
+     4,
+     2,
+     0,
+     3
+    ],
+    [
+     5,
+     147,
+     20,
+     0,
+     7
+    ],
+    [
+     3,
+     14,
+     271,
+     7,
+     54
+    ],
+    [
+     1,
+     2,
+     12,
+     126,
+     6
+    ],
+    [
+     2,
+     11,
+     33,
+     11,
+     579
+    ]
+   ]
+  },
+  "by_threshold": {
+   "0.5": {
+    "coverage": 0.873,
+    "accuracy_when_used": 0.917
+   },
+   "0.6": {
+    "coverage": 0.798,
+    "accuracy_when_used": 0.939
+   },
+   "0.7": {
+    "coverage": 0.72,
+    "accuracy_when_used": 0.948
+   },
+   "0.8": {
+    "coverage": 0.606,
+    "accuracy_when_used": 0.952
+   },
+   "0.9": {
+    "coverage": 0.422,
+    "accuracy_when_used": 0.964
+   }
+  }
+ },
+ "finetuned": {
+  "accuracy": 0.8842,
+  "macro_f1": 0.8775,
+  "per_class_f1": {
+   "brakes": 0.898,
+   "electrical": 0.877,
+   "engine": 0.834,
+   "fuel": 0.864,
+   "transmission": 0.915
+  },
+  "confusion_matrix": {
+   "labels": [
+    "brakes",
+    "electrical",
+    "engine",
+    "fuel",
+    "transmission"
+   ],
+   "rows_true_cols_pred": [
+    [
+     115,
+     5,
+     0,
+     0,
+     2
+    ],
+    [
+     4,
+     160,
+     9,
+     2,
+     4
+    ],
+    [
+     6,
+     11,
+     281,
+     9,
+     42
+    ],
+    [
+     4,
+     3,
+     5,
+     130,
+     5
+    ],
+    [
+     5,
+     7,
+     30,
+     13,
+     581
+    ]
+   ]
+  },
+  "by_threshold": {
+   "0.5": {
+    "coverage": 0.977,
+    "accuracy_when_used": 0.893
+   },
+   "0.6": {
+    "coverage": 0.948,
+    "accuracy_when_used": 0.901
+   },
+   "0.7": {
+    "coverage": 0.918,
+    "accuracy_when_used": 0.91
+   },
+   "0.8": {
+    "coverage": 0.874,
+    "accuracy_when_used": 0.922
+   },
+   "0.9": {
+    "coverage": 0.791,
+    "accuracy_when_used": 0.937
+   }
+  },
+  "best_val_macro_f1": 0.8527,
+  "train_seconds": 554,
+  "model": "xlm-roberta-base",
+  "epochs": 3,
+  "batch": 16,
+  "lr": 2e-05,
+  "max_len": 192,
+  "device": "cuda"
+ }
+}

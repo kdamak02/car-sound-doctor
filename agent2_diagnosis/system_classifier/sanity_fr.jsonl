@@ -1,0 +1,25 @@
+{"text": "ma voiture fait un grincement quand je freine", "label": "brakes"}
+{"text": "la pédale de frein est molle et s'enfonce presque jusqu'au plancher", "label": "brakes"}
+{"text": "les freins vibrent à haute vitesse et le volant tremble quand je freine", "label": "brakes"}
+{"text": "bruit de frottement métallique aux freins, les plaquettes sont usées", "label": "brakes"}
+{"text": "le voyant abs reste allumé et la voiture met longtemps à s'arrêter", "label": "brakes"}
+{"text": "le moteur cogne quand j'accélère", "label": "engine"}
+{"text": "le moteur surchauffe et le voyant de température s'allume", "label": "engine"}
+{"text": "le moteur consomme beaucoup d'huile et il y a de la fumée bleue", "label": "engine"}
+{"text": "bruit de claquement dans le moteur au ralenti", "label": "engine"}
+{"text": "le moteur broute et le voyant moteur clignote", "label": "engine"}
+{"text": "la boîte de vitesses patine et il y a des à-coups au passage des rapports", "label": "transmission"}
+{"text": "la boîte automatique ne passe plus la troisième vitesse", "label": "transmission"}
+{"text": "l'embrayage patine dans les côtes et la pédale est dure", "label": "transmission"}
+{"text": "la voiture secoue violemment quand je passe de la première à la deuxième", "label": "transmission"}
+{"text": "à-coups violents de la boîte automatique à froid et voyant de boîte allumé", "label": "transmission"}
+{"text": "la batterie se décharge toute seule pendant la nuit", "label": "electrical"}
+{"text": "les vitres électriques ne marchent plus et les fusibles grillent", "label": "electrical"}
+{"text": "le démarreur ne tourne pas, j'entends seulement un clic", "label": "electrical"}
+{"text": "les phares s'éteignent en roulant et le tableau de bord s'éteint", "label": "electrical"}
+{"text": "l'alternateur ne charge pas et le voyant de batterie reste allumé", "label": "electrical"}
+{"text": "forte odeur d'essence près du réservoir après avoir fait le plein", "label": "fuel"}
+{"text": "la pompe à carburant fait du bruit et la voiture cale", "label": "fuel"}
+{"text": "fuite de carburant sous la voiture quand elle est garée", "label": "fuel"}
+{"text": "manque de puissance et le filtre à gasoil est bouché", "label": "fuel"}
+{"text": "la jauge de carburant indique un faux niveau et le réservoir se remplit mal", "label": "fuel"}

@@ -1,0 +1,33 @@
+{
+  "case_id": "case_clio_001",
+  "chat_id": "123456789",
+  "status": "audio_analysed",
+  "round": 0,
+  "created_at": "2026-10-20T09:00:00+01:00",
+  "user_input": {
+    "text": "Ma Clio 2015 diesel grince au démarrage à froid.",
+    "voice_transcript": null,
+    "language": "fr",
+    "audio_file_id": "EXAMPLE_FILE_ID"
+  },
+  "vehicle": {"make": "Renault", "model": "Clio", "year": 2015, "fuel": "diesel", "mileage_km": null},
+  "symptom": {"description": "grincement au démarrage à froid", "context": "startup", "missing_info": []},
+  "audio": {
+    "status": "ok",
+    "label": "belt",
+    "context": "startup",
+    "top3": [{"label": "belt", "prob": 0.78}, {"label": "power_steering", "prob": 0.12}, {"label": "normal", "prob": 0.06}],
+    "anomaly_score": 0.81,
+    "confidence": "medium",
+    "description": {
+      "duration_s": 12.0,
+      "dominant_freq_hz": 2600.0,
+      "periodic": true,
+      "period_ms": null,
+      "speech_ratio": 0.05,
+      "summary": "High-pitched squeal that follows engine speed."
+    },
+    "model_version": "mock-0.1",
+    "warnings": []
+  }
+}

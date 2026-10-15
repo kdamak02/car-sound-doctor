@@ -1,0 +1,8 @@
+﻿{"strategy": "fixed", "hybrid": false, "sections": "all", "recall5": 0.676, "mrr": 0.52, "hit": 0.769, "rejected": "1/4", "direct_hit": 0.812, "reworded_hit": 0.5}
+{"strategy": "fixed", "hybrid": false, "sections": ["symptoms", "causes", "codes"], "recall5": 0.51, "mrr": 0.444, "hit": 0.615, "rejected": "1/4", "direct_hit": 0.5, "reworded_hit": 0.667}
+{"strategy": "structure", "hybrid": false, "sections": "all", "recall5": 0.74, "mrr": 0.604, "hit": 0.808, "rejected": "1/4", "direct_hit": 0.875, "reworded_hit": 0.667}
+{"strategy": "structure", "hybrid": false, "sections": ["symptoms", "causes", "codes"], "recall5": 0.801, "mrr": 0.629, "hit": 0.846, "rejected": "1/4", "direct_hit": 0.875, "reworded_hit": 0.833}
+{"strategy": "fixed", "hybrid": true, "sections": "all", "recall5": 0.715, "mrr": 0.696, "hit": 0.808, "rejected": "1/4", "direct_hit": 0.812, "reworded_hit": 0.667}
+{"strategy": "fixed", "hybrid": true, "sections": ["symptoms", "causes", "codes"], "recall5": 0.548, "mrr": 0.561, "hit": 0.654, "rejected": "1/4", "direct_hit": 0.562, "reworded_hit": 0.667}
+{"strategy": "structure", "hybrid": true, "sections": "all", "recall5": 0.83, "mrr": 0.667, "hit": 0.885, "rejected": "1/4", "direct_hit": 0.938, "reworded_hit": 0.833}
+{"strategy": "structure", "hybrid": true, "sections": ["symptoms", "causes", "codes"], "recall5": 0.801, "mrr": 0.688, "hit": 0.846, "rejected": "1/4", "direct_hit": 0.875, "reworded_hit": 0.833}

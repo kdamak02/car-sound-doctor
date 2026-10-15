@@ -49,3 +49,9 @@ lightning_upload/
 *.npz
 *.joblib
 hf_cache/
+
+# agent 2: derived data (rebuilt by dev_rag/ingest.py and system_classifier/prepare_data.py)
+agent2_diagnosis/dev_rag/index/
+
+# agent 2: derived data (rebuilt by dev_rag/ingest.py and system_classifier/prepare_data.py)
+agent2_diagnosis/system_classifier/data/

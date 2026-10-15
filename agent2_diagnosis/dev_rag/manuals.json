@@ -1,0 +1,20 @@
+[
+  {"file": "Clio_4_Ph1_-_955-7_FRA.pdf", "source": "renault_clio4_2012-2016_fr.pdf", "slug": "clio4ph1fr",
+   "make": "Renault", "model": "Clio", "year_from": 2012, "year_to": 2016, "language": "fr",
+   "note": "Renault e-guide, Clio 4 phase 1, ref. 955-7 (PDF created 2015-10). Years approximate: phase 1."},
+  {"file": "9999_9999_035_fr-FR.pdf", "source": "peugeot_208_2012-2019_fr.pdf", "slug": "peugeot208fr",
+   "make": "Peugeot", "model": "208", "year_from": 2012, "year_to": 2019, "language": "fr",
+   "note": "Peugeot Service Box, 208 first generation, edition 01-17 (PDF created 2017-05)."},
+  {"file": "9999_9999_458_fr-FR.pdf", "source": "peugeot_208_2019-2026_fr.pdf", "slug": "peugeot208iifr",
+   "make": "Peugeot", "model": "208", "year_from": 2019, "year_to": 2026, "language": "fr",
+   "note": "Peugeot Service Box, 208 second generation, edition 01-20."},
+  {"file": "CG3654frFRA-202007-20200716095247.pdf", "source": "ford_fiesta_2020-2021_fr.pdf", "slug": "fordfiestafr",
+   "make": "Ford", "model": "Fiesta", "year_from": 2020, "year_to": 2021, "language": "fr",
+   "note": "Ford CG3654, vehicles built 09/2020 to 03/2021."},
+  {"file": "CG3929frFRA-202201-20220606132559.pdf", "source": "ford_focus_2022-2026_fr.pdf", "slug": "fordfocusfr",
+   "make": "Ford", "model": "Focus", "year_from": 2022, "year_to": 2026, "language": "fr",
+   "note": "Ford CG3929, vehicles built from 09/2022."},
+  {"file": "i10_MY25pdf.pdf", "source": "hyundai_i10_2025_en.pdf", "slug": "hyundaii10en",
+   "make": "Hyundai", "model": "i10", "year_from": 2025, "year_to": 2026, "language": "en",
+   "note": "Hyundai i10 owner's manual MY25 (English)."}
+]
