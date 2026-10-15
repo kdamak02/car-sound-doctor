@@ -48,3 +48,4 @@ logs/
 lightning_upload/
 *.npz
 *.joblib
+hf_cache/

@@ -5,8 +5,10 @@ Agent 1 data preparation (owner A1).
     python agent1_audio/src/prepare_data.py --summary  # only print the table again
 
 What it does
- 1. Collects the real-car datasets in data/audio/raw/ and maps their classes to
-    contracts/labels.json (+ "hypotheses_only" classes kept apart, not trained on).
+ 1. Collects the real-car datasets in data/audio/raw/ and the validated YouTube segments
+    (data/audio/youtube/youtube_clips/) and maps their classes to contracts/labels.json.
+    A label is trained only if it has >= min_recordings distinct recordings (labels.json);
+    the others are kept as "hypothesis" (Agent 2 may propose them, Agent 1 never outputs them).
  2. Converts every clip to 16 kHz mono 16-bit WAV in data/audio/processed/<label>/.
  3. Recovers which clips come from the SAME recording. Kaggle and Hugging Face clips are
     numbered pieces of longer recordings (1.5 s / 6-7 s each) and consecutive numbers sound
@@ -57,9 +59,12 @@ VAFD_RULES = [  # (regex on the recording name, label); first match wins
 ]
 
 
+YT = ROOT / "data" / "audio" / "youtube" / "youtube_clips"
+
+
 def labels_info():
     d = json.loads((ROOT / "contracts" / "labels.json").read_text("utf-8"))
-    return {l["id"]: l["context"] for l in d["labels"]}
+    return {l["id"]: l["context"] for l in d["labels"]}, d.get("min_recordings", 8)
 
 
 def num(p):
@@ -96,7 +101,16 @@ def collect():
             skipped["vafd unlabelled (problem*, videoplayback...)"] += 1
             continue
         items.append(dict(src=f, dataset="vafd", series=f"vafd/{rec}", label=label,
-                          context="unknown", order=num(f), group_hint=f"vafd/{rec}"))
+                          context=None, order=num(f), group_hint=f"vafd/{rec}"))
+    # YouTube segments validated by the team (data/audio/youtube/yt_clips.py)
+    if (YT / "clips.csv").exists():
+        for r in csv.DictReader(open(YT / "clips.csv", encoding="utf-8")):
+            f = YT / r["file"]
+            if not f.exists():
+                continue
+            items.append(dict(src=f, dataset="youtube", series=f"yt/{r['video_id']}",
+                              label=r["label"], context=None, order=0,
+                              group_hint=f"yt/{r['video_id']}"))
     return items, skipped
 
 
@@ -164,8 +178,14 @@ def assign_groups(items):
 
 
 # ------------------------------------------------------------------ 4. split
-def split(items, trainable):
-    rng = np.random.default_rng(SEED)
+def split(items, ctx_of, min_rec):
+    """A label is trained only if it is in labels.json and has >= min_rec recordings."""
+    groups_per_label = defaultdict(set)
+    for it in items:
+        groups_per_label[it["label"]].add(it["group"])
+        if not it["context"]:
+            it["context"] = ctx_of.get(it["label"], "unknown")
+    trainable = {l for l, g in groups_per_label.items() if l in ctx_of and len(g) >= min_rec}
     by_label = defaultdict(lambda: defaultdict(list))
     for it in items:
         by_label[it["label"]][it["group"]].append(it)
@@ -175,8 +195,9 @@ def split(items, trainable):
                 for it in its:
                     it["split"] = "hypothesis"
             continue
-        names = list(groups)
-        rng.shuffle(names)                                  # random among equal sizes
+        names = sorted(groups)
+        # one fixed random draw per label: adding a label never changes the others' split
+        np.random.default_rng([SEED, *label.encode()]).shuffle(names)
         names.sort(key=lambda g: -len(groups[g]))           # biggest groups first
         total = sum(len(v) for v in groups.values())
         filled = {s: 0 for s in SPLIT}
@@ -206,7 +227,8 @@ def write(items):
         dur = len(read_wav(p)) / SR
         rows.append({"file": p.relative_to(OUT).as_posix(), "label": it["label"],
                      "context": it["context"], "dataset": it["dataset"],
-                     "orig_file": it["src"].relative_to(RAW).as_posix(), "group": it["group"],
+                     "orig_file": it["src"].relative_to(ROOT / "data" / "audio").as_posix(),
+                     "group": it["group"],
                      "split": it["split"], "duration_s": round(dur, 2)})
     with open(OUT / "metadata.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
@@ -246,12 +268,13 @@ def main():
     if a.summary:
         summary(list(csv.DictReader(open(OUT / "metadata.csv", encoding="utf-8"))))
         return
-    trainable = labels_info()
+    ctx_of, min_rec = labels_info()
     items, skipped = collect()
     print(f"collected {len(items)} clips; skipped: {dict(skipped)}")
     print(f"converted {convert(items)} new files")
     assign_groups(items)
-    split(items, trainable)
+    split(items, ctx_of, min_rec)
+    print(f"rule: a label is trained only with >= {min_rec} distinct recordings")
     summary(write(items))
 
 
