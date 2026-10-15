@@ -9,7 +9,7 @@ Choice for Agent 1: **real car recordings only**.
 |---|---|---|---|---|
 | `kaggle_car_diagnostics` | Kaggle `malakragaie/car-diagnostics-dataset` | 1,386 clips; idle (normal, belt, low oil, power steering), braking (normal, worn), startup (normal, dead battery, bad ignition); 437 `combined` clips are artificial mixes | **main training set**, without `combined` | see Kaggle page |
 | `hf_engine_phone` | Hugging Face `RashmiKarunarathne/MyDataSet` | 321 phone recordings: misfire 111, healthy 83, tappet 68, belt 59 | closest to Telegram audio | see HF page |
-| `vafd` | GitHub `amrrashed/Beyond-Sensors...` (VAFD) | 175 clips of 2.5 s at 32 kHz cut from ~34 recordings: belt, brakes, engine, exhaust, suspension | extra classes, group split mandatory | academic use, cite the paper |
+| `vafd` | GitHub `amrrashed/Beyond-Sensors...` (VAFD) | 175 clips of 2.5 s (16 kHz, partly stereo) cut from ~34 recordings: belt, brakes, engine, exhaust, suspension | extra classes, group split mandatory | academic use, cite the paper |
 | `cardiag_samples` | GitHub `jlacsam/cardiag` | 23 copies of Kaggle clips | quick tests only, never in training | MIT |
 
 Excluded (`data/audio/excluded/`): AI Mechanic (unclear provenance and labels),
