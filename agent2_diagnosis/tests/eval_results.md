@@ -42,3 +42,17 @@ chunking comparison uses "all sections". The fixed rows with the Agent 2 filter 
 - The queries and the labels were written from the same manuals by the team, so the wording overlaps the passages: results are optimistic compared with real drivers. Real Telegram messages (and the NHTSA complaints, in English) would be a harder test.
 - No reranker, so no "with / without reranker" row yet. The service is a stand-in: B1's Qdrant version must be re-measured with the same queries (chunk ids differ, the (manual, page) labels do not).
 - Labels are one person's reading: a teammate should check a sample of 10.
+
+## With / without the cross-encoder reranker (bge-reranker-v2-m3, CPU, top-8 pool, 800 characters per passage)
+
+Structure chunking, hybrid, sections symptoms+causes+codes, 30 queries. Reranker = drop passages whose score is under the threshold (hybrid order kept).
+
+| | hit rate (answerable, 26) | Recall@5 | MRR | no-answer rejected (4) |
+|---|---|---|---|---|
+| no reranker | 0.846 | 0.801 | 0.688 | 1/4 |
+| reranker, threshold 0.03 (default) | 0.808 | 0.763 | 0.702 | 3/4 |
+| reranker, threshold 0.10 | 0.692 | 0.660 | 0.615 | 4/4 |
+
+Reading: the reranker is the only signal that separates "no answer" queries (the dense score does not), at the price of some recall; the threshold is a trade-off chosen on 30 queries, so treat it as indicative. Reordering by reranker score (`DEV_RAG_RERANK_ORDER=true`) gave MRR 0.654 vs 0.615 at 0.10 but the same hit rate. CPU cost: about 4 s per search level.
+
+Support check in Agent 2 (`agent2.supported_causes`): the belt-squeal case no longer cites the starter table but still keeps "belt slippage" through OBDex belt-driven starter/generator codes (the reranker rates them relevant to the cause name). The check works on the cause name, not on the symptom, so it does not close the gap alone; the real fix is a belt-squeal manual passage in the corpus.

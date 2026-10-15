@@ -44,6 +44,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 SECTIONS = ["symptoms", "causes", "codes"]
 MAX_ROUNDS = 2  # case_record.round cap
 CONCLUSIVE_PROB, CONCLUSIVE_GAP = 0.6, 0.2
+SUPPORT_CHECK = os.getenv("AGENT2_SUPPORT_CHECK", "true").lower() == "true"  # drop causes whose cited passages the reranker does not tie to the cause
 CONTRADICTED_MAX = 0.05  # probability cap of a cause the driver's answers contradict (status field of P5)
 LEVELS = ["exact_model", "make", "generic", "none"]
 # R3 words, same as agent3_repair/guardrails/checks.py, plus oil pressure. Applied to the top cause's name and label.
@@ -217,6 +218,22 @@ def readable(name: str, label, lang: str) -> str:
     return name
 
 
+def supported_causes(raw, by_id: dict, case: dict, search, top: int = 3) -> list:
+    """A citation that exists is not a citation that supports. For the `top` likeliest causes, search the cause's own name:
+    the service reranks and drops weak passages, so the cause stays only if one of the passages it cites comes back.
+    ponytail: one extra search per cause (cheap with a GPU reranker); upgrade = score each (cause, cited chunk) pair directly."""
+    ranked = sorted(raw or [], key=lambda c: -(c.get("prob") or 0) if isinstance(c.get("prob"), (int, float)) else 0)
+    keep = []
+    for n, c in enumerate(ranked):
+        ids = {i for i in (clean_id(x) for x in c.get("sources") or []) if i in by_id}
+        if n < top and ids and c.get("name"):
+            back = {p["chunk_id"] for p in search(str(c["name"]), case.get("vehicle") or {}, 8)["passages"]}
+            if not ids & back:
+                continue  # cited passages do not talk about this cause
+        keep.append(c)
+    return keep
+
+
 def build_causes(raw, by_id: dict, lang: str = "fr") -> list[dict]:
     out = []
     for c in raw or []:
@@ -275,7 +292,8 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
 
     system = load_prompt("P4" if n == 1 else "P5")
     raw = parse_json(llm(system, user_message(case, passages, level, allow_new)))
-    causes = build_causes(raw.get("causes"), by_id, (case.get("user_input") or {}).get("language") or "fr")
+    raw_causes = supported_causes(raw.get("causes"), by_id, case, search) if SUPPORT_CHECK else raw.get("causes")
+    causes = build_causes(raw_causes, by_id, (case.get("user_input") or {}).get("language") or "fr")
     if not causes:
         raise Insufficient("the passages support no cause (or the model cited none)")
 

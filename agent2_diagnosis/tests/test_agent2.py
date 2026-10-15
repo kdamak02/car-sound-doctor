@@ -205,3 +205,11 @@ def test_labels_loader_understands_both_formats(tmp_path):
     assert load_labels(tmp_path)["hypotheses_only"]["ids"] == ["c"]
     (tmp_path / "agent1_audio/results/ast.json").unlink()  # no result file: nothing is claimed
     assert load_labels(tmp_path)["hypotheses_only"]["ids"] == []
+
+
+def test_support_check_drops_cause_whose_citation_does_not_come_back():
+    by_id = {"a": {}, "b": {}}
+    raw = [{"name": "belt", "prob": 0.7, "sources": ["a"]}, {"name": "battery", "prob": 0.3, "sources": ["b"]}]
+    search = lambda q, v, k: {"passages": [{"chunk_id": "b"}] if q == "battery" else []}  # noqa: E731
+    kept = agent2.supported_causes(raw, by_id, {}, search)
+    assert [c["name"] for c in kept] == ["battery"]

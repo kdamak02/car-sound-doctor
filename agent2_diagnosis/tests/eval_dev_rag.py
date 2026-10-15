@@ -22,7 +22,7 @@ K = 5
 
 def post(url, body):
     req = urllib.request.Request(url.rstrip("/") + "/search", data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json; charset=utf-8"})
-    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+    return json.loads(urllib.request.urlopen(req, timeout=300).read())
 
 
 def matches(p, rel, fixed):
@@ -44,6 +44,7 @@ def main():
     ap.add_argument("--sections", default="", help="comma list, e.g. symptoms,causes,codes (what Agent 2 asks for); empty = all sections")
     ap.add_argument("-v", action="store_true", help="list the queries that missed")
     ap.add_argument("--json", action="store_true", help="print one JSON line for the summary")
+    ap.add_argument("--no-rerank", action="store_true", help="ask the service not to rerank")
     a = ap.parse_args()
     health = json.loads(urllib.request.urlopen(a.url.rstrip("/") + "/health", timeout=10).read())
     fixed = health.get("strategy") == "fixed"
@@ -54,7 +55,7 @@ def main():
     for line in Path(a.queries).read_text(encoding="utf-8").splitlines():
         q = json.loads(line)
         filters = {**q["filters"], **({"section": sections} if sections else {})}
-        res = post(a.url, {"query": q["query"], "filters": filters, "top_k": K, "rerank": True})
+        res = post(a.url, {"query": q["query"], "filters": filters, "top_k": K, "rerank": not a.no_rerank})
         passages = res["passages"]
         t = per_type[q["type"]]
         if q["type"] == "no_answer":
@@ -70,7 +71,7 @@ def main():
             misses.append((q["id"], q["type"], q["query"], f"got {[(p['source'][:14], p['page']) for p in passages[:3]]}  level={res['fallback_level']}"))
 
     mean = lambda x: round(sum(x) / len(x), 3) if x else None  # noqa: E731
-    print(f"service: strategy={health.get('strategy')} hybrid={health.get('hybrid')} | sections={sections or 'all'} | k={K}")
+    print(f"service: strategy={health.get('strategy')} hybrid={health.get('hybrid')} rerank={health.get('rerank') and not a.no_rerank} | sections={sections or 'all'} | k={K}")
     print(f"{'type':<12}{'n':>3} {'Recall@5':>9} {'MRR':>6} {'hit rate':>9}")
     answerable = {"recall": [], "rr": [], "hit": []}
     for typ in ("direct", "reworded", "ambiguous", "unknown_car"):
