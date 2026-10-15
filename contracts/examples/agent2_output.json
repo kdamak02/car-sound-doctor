@@ -1,0 +1,71 @@
+{
+  "pass": 1,
+  "causes": [
+    {
+      "name": "Courroie d'accessoires détendue ou usée",
+      "label": "belt",
+      "prob": 0.65,
+      "evidence": [
+        "audio: belt 0.71, squeal 2.8 kHz",
+        "user: bruit au ralenti, surtout le matin"
+      ]
+    },
+    {
+      "name": "Galet tendeur ou enrouleur défaillant",
+      "label": null,
+      "prob": 0.2,
+      "evidence": [
+        "passage peugeot208_fr_p142_c3"
+      ]
+    },
+    {
+      "name": "Pompe de direction assistée",
+      "label": "power_steering",
+      "prob": 0.15,
+      "evidence": [
+        "audio: power_steering 0.17"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "c1",
+      "q": "Le sifflement augmente-t-il quand vous tournez le volant à l'arrêt ?",
+      "why": "Distingue la direction assistée de la courroie.",
+      "answer_type": "yes_no",
+      "citation": {
+        "chunk_id": "obdex_generic_belt_1",
+        "source": "obdex",
+        "page": null,
+        "verified": true
+      }
+    },
+    {
+      "id": "c2",
+      "q": "Moteur coupé, voyez-vous des fissures ou un aspect brillant sur la courroie ?",
+      "why": "Signes d'usure ou de glissement.",
+      "answer_type": "yes_no",
+      "citation": {
+        "chunk_id": "peugeot208_fr_p143_c1",
+        "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+        "page": 143,
+        "verified": true
+      }
+    },
+    {
+      "id": "c3",
+      "q": "Le bruit change-t-il quand vous allumez les phares et la climatisation ?",
+      "why": "Une charge électrique fait glisser une courroie détendue.",
+      "answer_type": "yes_no",
+      "citation": {
+        "chunk_id": "peugeot208_fr_p142_c3",
+        "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+        "page": 142,
+        "verified": true
+      }
+    }
+  ],
+  "conclusive": false,
+  "message_to_user": "Merci ! Pour confirmer, répondez à ces 3 questions :",
+  "safety_stop": false
+}

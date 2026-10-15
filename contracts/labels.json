@@ -1,0 +1,22 @@
+{
+  "_comment": "Single source of truth for Agent 1 classes. Group A owns this file; Agent 2 maps each label to RAG queries. Change by PR only.",
+  "version": "0.1.0",
+  "contexts": ["idle", "startup", "braking", "driving", "unknown"],
+  "labels": [
+    {"id": "normal",          "context": "idle",    "fr": "Moteur normal",                   "en": "Normal engine"},
+    {"id": "belt",            "context": "idle",    "fr": "Courroie qui siffle",             "en": "Squealing belt"},
+    {"id": "misfire",         "context": "idle",    "fr": "Raté d'allumage",                 "en": "Misfire / rough idle"},
+    {"id": "power_steering",  "context": "idle",    "fr": "Pompe de direction assistée",     "en": "Power steering pump"},
+    {"id": "low_oil",         "context": "idle",    "fr": "Manque d'huile",                  "en": "Low oil"},
+    {"id": "tappet",          "context": "idle",    "fr": "Claquement de poussoirs",         "en": "Tappet / lifter tick"},
+    {"id": "normal_brakes",   "context": "braking", "fr": "Freins normaux",                  "en": "Normal brakes"},
+    {"id": "worn_brakes",     "context": "braking", "fr": "Freins usés",                     "en": "Worn brakes"},
+    {"id": "normal_startup",  "context": "startup", "fr": "Démarrage normal",                "en": "Normal startup"},
+    {"id": "dead_battery",    "context": "startup", "fr": "Batterie faible",                 "en": "Weak / dead battery"},
+    {"id": "bad_ignition",    "context": "startup", "fr": "Allumage défaillant",             "en": "Bad ignition"}
+  ],
+  "hypotheses_only": {
+    "_comment": "Too few real recordings to train. Agent 2 may propose them as hypotheses and check them with questions.",
+    "ids": ["knock", "timing_chain", "exhaust_leak", "vacuum_leak", "starter", "wheel_bearing", "cv_joint", "alternator", "turbo", "diesel_injector"]
+  }
+}

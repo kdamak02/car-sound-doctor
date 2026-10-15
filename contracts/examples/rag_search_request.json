@@ -1,0 +1,15 @@
+{
+  "query": "squealing noise at idle drive belt causes",
+  "filters": {
+    "make": "Peugeot",
+    "model": "208",
+    "system": "belt",
+    "section": [
+      "symptoms",
+      "causes"
+    ],
+    "language": "fr"
+  },
+  "top_k": 5,
+  "rerank": true
+}

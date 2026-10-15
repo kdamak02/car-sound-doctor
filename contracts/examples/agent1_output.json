@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "label": "belt",
+  "context": "idle",
+  "top3": [
+    {
+      "label": "belt",
+      "prob": 0.71
+    },
+    {
+      "label": "power_steering",
+      "prob": 0.17
+    },
+    {
+      "label": "normal",
+      "prob": 0.06
+    }
+  ],
+  "anomaly_score": 0.82,
+  "confidence": "medium",
+  "description": {
+    "duration_s": 9.6,
+    "dominant_freq_hz": 2850.0,
+    "periodic": false,
+    "period_ms": null,
+    "speech_ratio": 0.04,
+    "summary": "Continuous high-pitched squeal around 2.8 kHz at idle, not periodic."
+  },
+  "model_version": "mock-0.1",
+  "warnings": [
+    "Mock answer: real model not plugged in yet."
+  ]
+}

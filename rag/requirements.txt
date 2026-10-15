@@ -1,0 +1,8 @@
+# service
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic>=2.9
+
+# retrieval and ingestion (needed when MOCK_MODE=false)
+qdrant-client>=1.12
+# sentence-transformers / FlagEmbedding (BGE-M3, bge-reranker), pdfplumber, rank-bm25, pyyaml

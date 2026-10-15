@@ -1,0 +1,36 @@
+{
+  "query": "squealing noise at idle drive belt causes",
+  "fallback_level": "exact_model",
+  "passages": [
+    {
+      "chunk_id": "peugeot208_fr_p142_c3",
+      "text": "Un sifflement aigu au démarrage ou au ralenti peut indiquer une courroie d'accessoires détendue ou usée...",
+      "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+      "page": 142,
+      "section": "symptoms",
+      "make": "Peugeot",
+      "model": "208",
+      "score": 0.81
+    },
+    {
+      "chunk_id": "peugeot208_fr_p143_c1",
+      "text": "Vérifier l'état de la courroie : fissures, brillance (glaçage), tension...",
+      "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+      "page": 143,
+      "section": "procedure",
+      "make": "Peugeot",
+      "model": "208",
+      "score": 0.77
+    },
+    {
+      "chunk_id": "obdex_generic_belt_1",
+      "text": "Serpentine belt slipping: squeal increases with electrical load or steering input...",
+      "source": "obdex",
+      "page": null,
+      "section": "causes",
+      "make": null,
+      "model": null,
+      "score": 0.69
+    }
+  ]
+}

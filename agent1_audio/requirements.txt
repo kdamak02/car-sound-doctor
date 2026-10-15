@@ -1,0 +1,9 @@
+# service
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+numpy>=1.26,<2.3
+jsonschema>=4.23
+
+# training (install locally or on Colab, not needed for mock mode)
+# torch, torchaudio, transformers (AST), librosa, scikit-learn, pandas, matplotlib

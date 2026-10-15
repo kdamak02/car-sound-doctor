@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent1_output.schema.json",
+  "title": "Agent 1 output: audio analysis",
+  "description": "Returned by POST /analyze of the audio service. The LLMs never get raw audio, only this.",
+  "type": "object",
+  "required": ["status", "label", "top3", "anomaly_score", "confidence", "description", "model_version"],
+  "properties": {
+    "status": {"enum": ["ok", "unusable_audio"], "description": "unusable_audio: too short, silent, or mostly speech. Then label is null and n8n asks for a new recording."},
+    "label": {"type": ["string", "null"], "description": "an id from contracts/labels.json"},
+    "context": {"enum": ["idle", "startup", "braking", "driving", "unknown"]},
+    "top3": {
+      "type": "array", "maxItems": 3,
+      "items": {
+        "type": "object", "required": ["label", "prob"],
+        "properties": {"label": {"type": "string"}, "prob": {"type": "number", "minimum": 0, "maximum": 1}}
+      }
+    },
+    "anomaly_score": {"type": "number", "minimum": 0, "maximum": 1, "description": "0 = sounds like a healthy engine, 1 = very unusual"},
+    "confidence": {"enum": ["low", "medium", "high"]},
+    "description": {
+      "type": "object",
+      "description": "Plain facts the LLM can quote, e.g. in prompt P3.",
+      "properties": {
+        "duration_s": {"type": "number"},
+        "dominant_freq_hz": {"type": ["number", "null"]},
+        "periodic": {"type": ["boolean", "null"], "description": "regular repeating impacts (tick, knock)"},
+        "period_ms": {"type": ["number", "null"]},
+        "speech_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "summary": {"type": "string"}
+      }
+    },
+    "model_version": {"type": "string"},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rag_search.schema.json",
+  "title": "RAG search service: request and response",
+  "$defs": {
+    "request": {
+      "type": "object", "required": ["query"],
+      "properties": {
+        "query": {"type": "string"},
+        "filters": {
+          "type": "object",
+          "properties": {
+            "make": {"type": "string"},
+            "model": {"type": "string"},
+            "year": {"type": "integer"},
+            "system": {"enum": ["engine", "brakes", "belt", "ignition", "electrical", "exhaust", "steering", "suspension", "transmission", "fuel", "other"]},
+            "section": {"type": "array", "items": {"enum": ["symptoms", "causes", "procedure", "safety", "maintenance", "codes"]}},
+            "language": {"enum": ["fr", "en"]}
+          }
+        },
+        "top_k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
+        "rerank": {"type": "boolean", "default": true}
+      }
+    },
+    "response": {
+      "type": "object", "required": ["query", "passages", "fallback_level"],
+      "properties": {
+        "query": {"type": "string"},
+        "fallback_level": {"enum": ["exact_model", "make", "generic", "none"], "description": "how far the filters had to be relaxed; tell the user if not exact_model"},
+        "passages": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["chunk_id", "text", "source", "page", "score"],
+            "properties": {
+              "chunk_id": {"type": "string"},
+              "text": {"type": "string"},
+              "source": {"type": "string"},
+              "page": {"type": ["integer", "null"]},
+              "section": {"type": "string"},
+              "make": {"type": ["string", "null"]},
+              "model": {"type": ["string", "null"]},
+              "score": {"type": "number"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "citation.schema.json",
+  "title": "Citation of a retrieved passage",
+  "description": "Every check (Agent 2) and every repair step (Agent 3) must carry one. chunk_id must be one of the passages actually returned by /search for this case.",
+  "type": "object",
+  "required": ["chunk_id", "source", "page"],
+  "properties": {
+    "chunk_id": {"type": "string"},
+    "source": {"type": "string", "description": "file name or dataset, e.g. peugeot_208_2019-2023_fr.pdf or obdex:P0300"},
+    "page": {"type": ["integer", "null"], "description": "null only for structured sources without pages (OBD databases)"},
+    "verified": {"type": "boolean", "default": true, "description": "false for web search fallback results"}
+  }
+}

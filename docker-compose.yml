@@ -1,0 +1,39 @@
+services:
+  n8n:
+    image: n8nio/n8n:1.80.0
+    ports: ["5678:5678"]
+    env_file: .env
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-Africa/Tunis}
+      - N8N_SECURE_COOKIE=false
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on: [audio-service, rag-service]
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.4
+    ports: ["6333:6333"]
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+
+  audio-service:
+    build: ./agent1_audio
+    ports: ["8001:8001"]
+    environment:
+      - MOCK_MODE=${MOCK_MODE:-true}
+    volumes:
+      - ./contracts:/app/contracts:ro
+      - ./models:/app/models:ro
+
+  rag-service:
+    build: ./rag
+    ports: ["8002:8002"]
+    environment:
+      - MOCK_MODE=${MOCK_MODE:-true}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-car_manuals}
+    volumes:
+      - ./contracts:/app/contracts:ro
+    depends_on: [qdrant]

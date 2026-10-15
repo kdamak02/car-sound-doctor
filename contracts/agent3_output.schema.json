@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent3_output.schema.json",
+  "title": "Agent 3 output: repair guide",
+  "type": "object",
+  "required": ["status", "fault", "steps", "tools", "difficulty", "confidence", "see_mechanic"],
+  "properties": {
+    "status": {"enum": ["ok", "insufficient_information", "safety_stop"]},
+    "fault": {"type": "string"},
+    "steps": {
+      "type": "array", "maxItems": 15,
+      "description": "Empty when status is not ok.",
+      "items": {
+        "type": "object", "required": ["n", "action", "citation"],
+        "properties": {
+          "n": {"type": "integer", "minimum": 1},
+          "action": {"type": "string"},
+          "warning": {"type": ["string", "null"]},
+          "citation": {"$ref": "citation.schema.json"}
+        }
+      }
+    },
+    "tools": {"type": "array", "items": {"type": "string"}},
+    "parts": {"type": "array", "items": {"type": "string"}},
+    "difficulty": {"enum": ["easy", "medium", "hard", "mechanic_only"]},
+    "estimated_time_min": {"type": ["integer", "null"]},
+    "confidence": {"enum": ["low", "medium", "high"]},
+    "see_mechanic": {"type": "boolean", "description": "must be true when confidence is low or difficulty is mechanic_only"},
+    "safety_warnings": {"type": "array", "items": {"type": "string"}},
+    "message_to_user": {"type": "string"},
+    "voice_summary": {"type": "string", "maxLength": 400, "description": "for TTS, prompt P7"}
+  }
+}

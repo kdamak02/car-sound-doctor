@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "case_record.schema.json",
+  "title": "Case record shared by all agents",
+  "description": "One JSON per Telegram conversation, stored by n8n and keyed by chat_id. Each step reads it and fills its own field.",
+  "type": "object",
+  "required": ["case_id", "chat_id", "status", "round", "created_at", "user_input"],
+  "properties": {
+    "case_id": {"type": "string"},
+    "chat_id": {"type": "string"},
+    "status": {"enum": ["collecting_info", "audio_analysed", "waiting_checks", "diagnosed", "done", "failed"]},
+    "round": {"type": "integer", "minimum": 0, "maximum": 2, "description": "number of check rounds done (cap: 2)"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "user_input": {
+      "type": "object",
+      "properties": {
+        "text": {"type": "string"},
+        "voice_transcript": {"type": ["string", "null"]},
+        "language": {"enum": ["fr", "en", "ar", "darija", "unknown"]},
+        "audio_file_id": {"type": ["string", "null"]}
+      }
+    },
+    "vehicle": {
+      "description": "Filled by the extraction step (prompt P1).",
+      "type": "object",
+      "properties": {
+        "make": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "year": {"type": ["integer", "null"]},
+        "fuel": {"enum": ["petrol", "diesel", "hybrid", "electric", null]},
+        "mileage_km": {"type": ["integer", "null"]}
+      }
+    },
+    "symptom": {
+      "type": "object",
+      "properties": {
+        "description": {"type": "string"},
+        "context": {"enum": ["idle", "startup", "braking", "driving", "turning", "unknown"]},
+        "missing_info": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "audio": {"$ref": "agent1_output.schema.json"},
+    "diagnosis": {"type": "array", "description": "one Agent 2 output per pass", "items": {"$ref": "agent2_output.schema.json"}},
+    "check_answers": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["check_id", "answer"],
+        "properties": {"check_id": {"type": "string"}, "answer": {"type": "string"}, "round": {"type": "integer"}}
+      }
+    },
+    "repair": {"$ref": "agent3_output.schema.json"},
+    "errors": {
+      "type": "array",
+      "items": {"type": "object", "properties": {"step": {"type": "string"}, "message": {"type": "string"}, "at": {"type": "string"}}}
+    }
+  }
+}

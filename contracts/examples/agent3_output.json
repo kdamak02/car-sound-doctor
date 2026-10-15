@@ -1,0 +1,55 @@
+{
+  "status": "ok",
+  "fault": "Courroie d'accessoires usée",
+  "steps": [
+    {
+      "n": 1,
+      "action": "Coupez le moteur, retirez la clé et attendez que le moteur refroidisse.",
+      "warning": "Ne jamais toucher la courroie moteur tournant.",
+      "citation": {
+        "chunk_id": "peugeot208_fr_p143_c1",
+        "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+        "page": 143,
+        "verified": true
+      }
+    },
+    {
+      "n": 2,
+      "action": "Inspectez la courroie : fissures, morceaux manquants, aspect glacé.",
+      "warning": null,
+      "citation": {
+        "chunk_id": "peugeot208_fr_p143_c1",
+        "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+        "page": 143,
+        "verified": true
+      }
+    },
+    {
+      "n": 3,
+      "action": "Si elle est abîmée, faites-la remplacer avec le galet tendeur.",
+      "warning": null,
+      "citation": {
+        "chunk_id": "peugeot208_fr_p142_c3",
+        "source": "EXAMPLE_peugeot_208_2019-2023_fr.pdf",
+        "page": 142,
+        "verified": true
+      }
+    }
+  ],
+  "tools": [
+    "lampe torche"
+  ],
+  "parts": [
+    "courroie d'accessoires",
+    "galet tendeur (recommandé)"
+  ],
+  "difficulty": "medium",
+  "estimated_time_min": 60,
+  "confidence": "medium",
+  "see_mechanic": true,
+  "safety_warnings": [
+    "Si la courroie casse, la direction assistée et la charge de la batterie peuvent s'arrêter."
+  ],
+  "message_to_user": "Diagnostic probable : courroie d'accessoires usée. Voici les étapes...",
+  "voice_summary": "Votre courroie d'accessoires semble usée. Inspectez-la moteur coupé, et faites-la remplacer rapidement avec son galet tendeur."
+}

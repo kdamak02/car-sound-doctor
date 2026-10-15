@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install jsonschema fastapi "uvicorn[standard]" python-multipart httpx pytest numpy pydantic
+      - name: Contracts and examples are valid
+        run: python contracts/validate.py
+      - name: Tests
+        run: pytest -q agent1_audio/tests agent3_repair/tests
+      - name: No secrets committed
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|kaggle\.json|access_token'; then
+            echo "A secret file is tracked by git"; exit 1; fi
+          if git grep -nE '(sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|KGAT_[0-9a-f]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,})' -- . ':!*.md'; then
+            echo "Something that looks like an API key is committed"; exit 1; fi

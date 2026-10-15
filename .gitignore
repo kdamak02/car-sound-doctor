@@ -1,0 +1,47 @@
+# secrets
+.env
+*.env.local
+kaggle.json
+access_token
+
+# data (download with the scripts in data/)
+data/audio/raw/
+data/audio/excluded/
+data/audio/processed/
+data/audio/youtube/youtube_clips/
+data/audio/youtube/youtube_auto/
+data/rag/raw/
+data/rag/processed/
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.zip
+
+# models and stores
+models/
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.safetensors
+qdrant_storage/
+n8n_data/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# os / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# local leftovers
+_to_delete/
+logs/

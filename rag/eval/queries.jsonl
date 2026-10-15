@@ -1,0 +1,2 @@
+{"id": "q00", "type": "direct", "query": "squealing noise at idle drive belt causes", "filters": {"make": "Peugeot", "model": "208"}, "relevant": ["peugeot208_fr_p142_c3"], "_comment": "EXAMPLE matching the mock. Replace with 25-30 real queries once the index exists."}
+{"id": "q01", "type": "no_answer", "query": "how to replace the flux capacitor", "filters": {}, "relevant": []}
