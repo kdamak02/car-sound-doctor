@@ -1,0 +1,14 @@
+# training / evaluation of Agent 1 (Lightning AI, Kaggle, Colab or local)
+torch
+transformers>=4.44
+soundfile
+librosa>=0.10
+scikit-learn>=1.4
+joblib
+matplotlib
+numpy
+imageio-ffmpeg   # ffmpeg with libopus if the system has none (telegram_robustness.py)
+streamlit
+requests
+pandas
+jsonschema

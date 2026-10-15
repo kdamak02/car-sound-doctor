@@ -19,13 +19,17 @@ services:
       - ./qdrant_storage:/qdrant/storage
 
   audio-service:
-    build: ./agent1_audio
+    build:
+      context: ./agent1_audio
+      args:
+        WITH_MODEL: ${AGENT1_REAL:-false}     # true = install torch/transformers for real mode
     ports: ["8001:8001"]
     environment:
-      - MOCK_MODE=${MOCK_MODE:-true}
+      - MOCK_MODE=${AGENT1_MOCK:-true}
     volumes:
       - ./contracts:/app/contracts:ro
-      - ./models:/app/models:ro
+      - ./models:/app/models:ro               # agent1_ast.joblib + agent1_ae.pt
+      - ./hf_cache:/root/.cache/huggingface   # AST weights downloaded once
 
   rag-service:
     build: ./rag

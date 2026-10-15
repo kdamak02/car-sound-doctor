@@ -1,0 +1,32 @@
+{
+  "trained on clean only": {
+    "clean test": {
+      "macro_f1": 0.717,
+      "accuracy": 0.788,
+      "macro_f1_with_context": 0.739
+    },
+    "Opus 16k test": {
+      "macro_f1": 0.583,
+      "accuracy": 0.652,
+      "macro_f1_with_context": 0.685
+    }
+  },
+  "trained on clean + Opus": {
+    "clean test": {
+      "macro_f1": 0.695,
+      "accuracy": 0.783,
+      "macro_f1_with_context": 0.751
+    },
+    "Opus 16k test": {
+      "macro_f1": 0.638,
+      "accuracy": 0.717,
+      "macro_f1_with_context": 0.72
+    }
+  },
+  "augmentation_bitrates": [
+    "12k",
+    "16k",
+    "24k",
+    "32k"
+  ]
+}

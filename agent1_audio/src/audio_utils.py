@@ -1,15 +1,29 @@
 """Shared audio helpers: decoding (any format, incl. Telegram OGG/Opus) and the
 plain-fact description sent to the LLMs."""
+import shutil
 import subprocess
 
 import numpy as np
 
 SR = 16000
+MIN_DURATION_S = 1.5   # one model window; shorter recordings are rejected
+
+
+def ffmpeg_exe():
+    """System ffmpeg, or the one shipped by `pip install imageio-ffmpeg` (e.g. Lightning AI)."""
+    exe = shutil.which("ffmpeg")
+    if exe:
+        return exe
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError as e:
+        raise RuntimeError("ffmpeg not found: install it or run  pip install imageio-ffmpeg") from e
 
 
 def load_audio(path, sr=SR):
     """Decode any audio file to mono float32 in [-1, 1] at `sr` Hz, using ffmpeg."""
-    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(path), "-ac", "1",
+    r = subprocess.run([ffmpeg_exe(), "-loglevel", "error", "-i", str(path), "-ac", "1",
                         "-ar", str(sr), "-f", "s16le", "-"], capture_output=True)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.decode(errors="replace")[-200:])

@@ -1,0 +1,4 @@
+model                          macro-F1   accuracy   anomaly AUC
+MFCC + random_forest             0.616      0.702      0.822
+AST  + logreg_C1                 0.717      0.788      0.811
+AST  + logreg_C1 + context       0.739      0.803

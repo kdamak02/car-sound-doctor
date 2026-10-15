@@ -1,0 +1,25 @@
+{
+  "model": "conv autoencoder on 64x96 log-mel, trained on healthy sounds only",
+  "epochs": 30,
+  "best_val_error": 0.0557,
+  "test_auc_fault_vs_healthy": 0.865,
+  "mean_error_by_label": {
+    "bad_ignition": 0.0817,
+    "belt": 0.1067,
+    "dead_battery": 0.1228,
+    "knock": 0.0914,
+    "low_oil": 0.0788,
+    "misfire": 0.0777,
+    "normal": 0.0473,
+    "normal_brakes": 0.0404,
+    "normal_startup": 0.0812,
+    "power_steering": 0.0763,
+    "tappet": 0.0983,
+    "worn_brakes": 0.093
+  },
+  "anomaly_auc_comparison": {
+    "MFCC + Isolation Forest": 0.822,
+    "AST + Isolation Forest": 0.811,
+    "Conv autoencoder": 0.865
+  }
+}

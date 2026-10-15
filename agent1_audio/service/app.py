@@ -19,7 +19,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
 BASE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE))
-from src.audio_utils import describe, load_audio  # noqa: E402
+from src.audio_utils import MIN_DURATION_S, describe, load_audio  # noqa: E402
 
 CONTRACTS = Path(os.getenv("CONTRACTS_DIR", BASE.parent / "contracts"))
 if not CONTRACTS.exists():                      # inside docker
@@ -54,8 +54,8 @@ async def analyze(file: UploadFile = File(...), context: str = Form("unknown")):
             raise HTTPException(422, f"cannot decode audio: {e}")
         desc = describe(x)
 
-        if desc["duration_s"] < 2.0:
-            return unusable(desc, "Recording shorter than 2 seconds.")
+        if desc["duration_s"] < MIN_DURATION_S:
+            return unusable(desc, f"Recording shorter than {MIN_DURATION_S} seconds.")
 
         if MOCK:
             out = json.loads((CONTRACTS / "examples" / "agent1_output.json").read_text("utf-8"))
