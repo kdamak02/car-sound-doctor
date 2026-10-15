@@ -165,7 +165,10 @@ def main():
     res["anomaly_auc_comparison"] = comp
     (RES / "ae_anomaly.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
     torch.save({"state": model.state_dict(), "mu": float(mu), "sd": float(sd),
-                "healthy_train_err": torch.from_numpy(healthy_train_err)}, MODELS / "agent1_ae.pt")
+                "healthy_train_err": torch.from_numpy(healthy_train_err),
+                # calibration reference = healthy VALIDATION clips (never trained on),
+                # so a new healthy sound gets a mid-range score, not ~1.0
+                "healthy_val_err": torch.from_numpy(np.sort(err[va]))}, MODELS / "agent1_ae.pt")
 
     print("\nAnomaly detection, test AUC (fault vs healthy):")
     for k, v in comp.items():
