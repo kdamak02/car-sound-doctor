@@ -7,3 +7,4 @@ scikit-learn>=1.4
 joblib
 matplotlib
 numpy
+imageio-ffmpeg   # ffmpeg with libopus if the system has none (telegram_robustness.py)
