@@ -13,10 +13,64 @@ LLM + RAG, runs as an AI Agent node in n8n, two passes.
 | 2 | `prompts/P5_reranking.md` | re-rank with the answers; `conclusive=false` and round < 2 → new checks, else go to Agent 3 |
 
 Rules
-- Classes in `contracts/labels.json → hypotheses_only` (knock, exhaust leak...) can be proposed
+- Labels of `contracts/labels.json` that Agent 1 did not train (not in `agent1_audio/results/ast.json`; timing chain, turbo...) can be proposed
   as causes even if the audio model cannot detect them, but only with checks that confirm them.
 - If a cause involves brakes, steering or overheating: `safety_stop = true`.
 - Guardrails (`agent3_repair/guardrails/checks.py`, n8n `code_nodes/validate_output.js`) run on
   this output too.
 
 Put here: test cases (input case + expected causes) in `tests/cases/`, and any helper script.
+
+## What is in this folder
+
+| Path | What |
+|---|---|
+| `agent2.py` | the logic in Python (reference + tests): queries, `/search`, LLM call, grounding (only retrieved chunks can be cited), decisions in code (`conclusive`, `safety_stop`, label check, check ids, a contradicted cause is capped), guardrails R1-R3 |
+| `build_workflow.py` | generates `n8n/workflows/agent2_diagnosis.json` from the prompts, `labels.json` and `n8n/code_nodes/agent2_*.js` (so the workflow cannot drift from the repo) |
+| `../n8n/code_nodes/agent2_*.js` | the same logic as n8n Code nodes: Prepare input, Retrieve passages (prefetch mode), Rescue prompt, Ground and decide |
+| `../prompts/P3`, `P4`, `P5` | the prompts, with versions, failure cases and measured before/after |
+| `tests/` | pytest (stub LLM and stub RAG), `cases/` (case files + expected behaviour), `eval_dev_rag.py` + `eval_results.md` (retrieval evaluation), `reliability.py`, `tool_loop_probe.py` |
+| `dev_rag/` | stand-in `/search` service over the manuals + OBD-II codes (ingestion, hybrid search) until B1's Qdrant service exists |
+| `streamlit_app.py` | test page: plays Telegram + Agent 1, calls the n8n webhook, answers the checks |
+| `system_classifier/` | symptom -> car system classifier (88.4 % accuracy), trained, not wired in |
+| `REQUIREMENTS_CHECK.md` | audit against the course brief and the repo rules |
+
+## How the n8n workflow works
+
+`Webhook` (or `When called by main workflow`) -> `Prepare input` (audio text P3, prompt P4 or P5, filters) -> **`Agent 2`** (AI Agent node with the HTTP tool
+`rag_search` = `POST /search`) -> `Ground and decide` -> `Guardrails (R2, R3)` (the team node) -> `Valid?` -> `Output` | `Insufficient`.
+With the local model a safety net sits after the agent (`Agent answered?` -> `Rescue prompt` -> `Rescue answer`): if the agent returns nothing, one JSON-mode call answers
+from the passages it already retrieved. `MODE=prefetch` (retrieval in a Code node, then one chain call) is a fallback for models that cannot drive the tool loop.
+
+## Run it
+
+```bash
+# 1. tests, no network, no key (the CI command)
+pytest -q agent2_diagnosis/tests
+node n8n/code_nodes/test_agent2_nodes.js
+
+# 2. team default: Gemini + mock RAG from docker compose
+python agent2_diagnosis/build_workflow.py          # -> n8n/workflows/agent2_diagnosis.json
+docker compose up -d n8n rag-service               # MOCK_MODE=true by default
+#    import the JSON in n8n (menu > Import from file), open "Gemini Chat Model", select your credential, activate
+
+# 3. local, no quota: Ollama + the real manuals (Windows launcher: start_all.ps1 in the parent folder)
+ollama pull qwen2.5:7b                              # OLLAMA_HOST=0.0.0.0:11434 so Docker can reach it
+python agent2_diagnosis/dev_rag/ingest.py structure && python agent2_diagnosis/dev_rag/ingest.py obdex   # manuals in rag/raw/manuals, see dev_rag/manuals.json
+DEV_RAG_DEVICE=cpu python -m uvicorn agent2_diagnosis.dev_rag.app:app --host 0.0.0.0 --port 8002        # CPU: leaves the GPU to Ollama
+LLM=ollama RAG_URL=http://host.docker.internal:8002/search python agent2_diagnosis/build_workflow.py
+#    import it, select the Ollama credential (base URL http://host.docker.internal:11434) on BOTH Ollama nodes, activate
+
+# 4. try it
+python agent2_diagnosis/tests/reliability.py agent2_diagnosis/tests/cases/clio_starter_pass1.json 5
+streamlit run agent2_diagnosis/streamlit_app.py     # http://localhost:8501
+
+# 5. measure retrieval (needs the service of step 3)
+python agent2_diagnosis/tests/make_eval_queries.py && python agent2_diagnosis/tests/eval_dev_rag.py --sections symptoms,causes,codes -v
+```
+
+## Decisions that go beyond the contract (review in the PR)
+- `safety_stop` follows the **most likely** cause (same as the team guardrail); a less likely risky cause only adds a caution sentence to `message_to_user`. Oil pressure is also a safety word.
+- A cause the driver's answers contradict is capped at 0.05 (field `status` of prompt P5, read by the code, not part of `agent2_output`).
+- Proposed, **not applied**: search the sections `symptoms, causes, codes` **and `maintenance`** (measured hit rate 0.92 instead of 0.85, see `tests/eval_results.md`).
+- Known weakness: citations are checked for existence, not for support (see `REQUIREMENTS_CHECK.md`).
