@@ -8,3 +8,7 @@ joblib
 matplotlib
 numpy
 imageio-ffmpeg   # ffmpeg with libopus if the system has none (telegram_robustness.py)
+streamlit
+requests
+pandas
+jsonschema
