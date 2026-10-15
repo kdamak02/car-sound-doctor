@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[2]
 A1 = ROOT / "agent1_audio"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(A1))
-from src.audio_utils import SR, describe, load_audio  # noqa: E402
+from src.audio_utils import MIN_DURATION_S, SR, describe, load_audio, ffmpeg_exe  # noqa: E402
 
 DATA = ROOT / "data" / "audio" / "processed"
 LABELS = json.loads((ROOT / "contracts" / "labels.json").read_text("utf-8"))
@@ -42,18 +42,9 @@ st.set_page_config(page_title="Car Sound Doctor · Agent 1", page_icon="🔧", l
 
 
 # ------------------------------------------------------------------ helpers
-def ffmpeg():
-    import shutil
-    exe = shutil.which("ffmpeg")
-    if exe:
-        return exe
-    import imageio_ffmpeg
-    return imageio_ffmpeg.get_ffmpeg_exe()
-
-
 def to_opus(path, bitrate):
     out = Path(path).with_suffix(".tg.ogg")
-    subprocess.run([ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-ac", "1",
+    subprocess.run([ffmpeg_exe(), "-y", "-loglevel", "error", "-i", str(path), "-ac", "1",
                     "-ar", "48000", "-c:a", "libopus", "-b:a", bitrate, "-application", "voip",
                     str(out)], check=True)
     return out
@@ -69,10 +60,10 @@ def direct_model():
 def analyze_direct(path, context):
     x = load_audio(path)
     desc = describe(x)
-    if desc["duration_s"] < 2.0:
+    if desc["duration_s"] < MIN_DURATION_S:
         return {"status": "unusable_audio", "label": None, "context": "unknown", "top3": [],
                 "anomaly_score": 0.0, "confidence": "low", "description": desc,
-                "model_version": "n/a", "warnings": ["Recording shorter than 2 seconds."]}
+                "model_version": "n/a", "warnings": [f"Recording shorter than {MIN_DURATION_S} seconds."]}
     out = direct_model().predict(x, context=context)
     out["description"] = {**desc, **out.get("description", {})}
     return out

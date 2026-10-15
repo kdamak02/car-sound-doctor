@@ -72,7 +72,7 @@ HTTP errors: `400` empty file, `413` file > 20 MB, `422` file cannot be decoded.
 
 | Field | Meaning | How to use it |
 |---|---|---|
-| `status` | `ok` or `unusable_audio` (shorter than 2 s or undecodable) | `unusable_audio` → ask for a new 5-10 s recording, engine bay, no talking |
+| `status` | `ok` or `unusable_audio` (shorter than 1.5 s or undecodable) | `unusable_audio` → ask for a new 5-10 s recording, engine bay, no talking |
 | `label` | most likely class among the **12 trained ones** (`contracts/labels.json`) | a hypothesis, never a verdict |
 | `top3` | 3 best classes with probabilities (sum ≤ 1) | Agent 2 builds checks that separate them |
 | `confidence` | `high` (top ≥ 0.70 and margin ≥ 0.30), `medium` (top ≥ 0.45), `low` | `low` → Agent 2 relies on the user's checks more than on the audio |
