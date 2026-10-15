@@ -45,3 +45,6 @@ Thumbs.db
 # local leftovers
 _to_delete/
 logs/
+lightning_upload/
+*.npz
+*.joblib
