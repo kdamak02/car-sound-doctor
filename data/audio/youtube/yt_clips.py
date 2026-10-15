@@ -1,108 +1,135 @@
 """
-Car Sound Doctor - build audio clips from YouTube videos listed in annotations.csv.
+Car Sound Doctor - download the annotated YouTube segments (annotations.csv).
 
-Setup (once):
-    pip install yt-dlp
-    ffmpeg must be installed (winget install ffmpeg  on Windows)
+Setup (once, on your PC):
+    pip install yt-dlp imageio-ffmpeg
+(imageio-ffmpeg ships its own ffmpeg, so nothing else to install)
 
-Run from the folder that contains annotations.csv:
+Run from this folder:
     python yt_clips.py
 
-For each row: downloads ONLY the [start, end] section of the audio, converts it to
-16 kHz mono WAV, and cuts it into 5-second clips:
-    youtube_clips/<label>/<video_id>_<start>_<n>.wav
-Rows already done are skipped. A log of what was produced: youtube_clips/clips.csv
+For each row it downloads ONLY the [start, end] part of the audio and saves it as one
+16 kHz mono WAV:  youtube_clips/<label>/<video_id>_<start>.wav
+(prepare_data.py cuts it into 1.5 s windows later). Segments shorter than 1.5 s are skipped.
+Already downloaded rows are skipped, so you can add rows and run it again.
+Log: youtube_clips/clips.csv  (used by agent1_audio/src/prepare_data.py)
 
-Keep the video_id in the file name: train/test must be split BY VIDEO, never at random.
+Copyright: these clips are for the project only. Never commit or share them;
+the URL list goes in the report annex.
 """
 import csv
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "youtube_clips"
+HERE = Path(__file__).resolve().parent
+OUT = HERE / "youtube_clips"
 TMP = OUT / "_tmp"
-CLIP_SECONDS = 5
-SR = 16000
+MIN_S = 1.5
+TIMEOUT = 180  # seconds per segment
+
+
+def find_ffmpeg():
+    exe = shutil.which("ffmpeg")
+    if exe:
+        return exe
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError:
+        sys.exit("ffmpeg not found: run  pip install imageio-ffmpeg  and try again")
+
+
+FIELDS = ["file", "label", "video_id", "url", "start_s", "end_s", "vehicle", "diagnosed_by",
+          "recorded_where"]
 
 
 def to_seconds(t):
-    """'83', '1:23' or '0:01:23' -> seconds."""
-    parts = [float(p) for p in str(t).strip().split(":")]
+    """'83', '1:23', '0:01:23' -> seconds. Accepts ';' typed instead of ':'."""
+    t = str(t).strip().replace(";", ":").replace(",", ".")
+    if not re.fullmatch(r"\d+(:\d+(\.\d+)?){0,2}(\.\d+)?", t):
+        raise ValueError(f"bad time {t!r}")
     s = 0.0
-    for p in parts:
-        s = s * 60 + p
+    for p in t.split(":"):
+        s = s * 60 + float(p)
     return s
 
 
 def video_id(url):
+    url = url.strip()
     if "v=" in url:
         return url.split("v=")[1].split("&")[0]
-    return url.rstrip("/").split("/")[-1].split("?")[0]
+    return url.rstrip("/").split("/")[-1].split("?")[0]   # youtu.be/<id>, /shorts/<id>
 
 
 def main():
-    rows = list(csv.DictReader(open(ROOT / "annotations.csv", encoding="utf-8-sig")))
-    OUT.mkdir(exist_ok=True)
-    TMP.mkdir(exist_ok=True)
+    ffmpeg = find_ffmpeg()
+    print("ffmpeg:", ffmpeg)
+    rows = list(csv.DictReader(open(HERE / "annotations.csv", encoding="utf-8-sig")))
+    TMP.mkdir(parents=True, exist_ok=True)
     log_path = OUT / "clips.csv"
-    new_log = not log_path.exists()
-    log = open(log_path, "a", newline="", encoding="utf-8")
-    w = csv.writer(log)
-    if new_log:
-        w.writerow(["file", "label", "video_id", "url", "start", "end",
-                    "vehicle", "diagnosed_by", "recorded_where"])
-
-    for i, r in enumerate(rows, 1):
-        url, label = r["url"].strip(), r["label"].strip()
-        if not url or not label:
+    done = {r["file"]: r for r in csv.DictReader(open(log_path, encoding="utf-8"))} \
+        if log_path.exists() else {}
+    ok = fail = 0
+    for i, r in enumerate(rows, 2):                       # 2 = line number in Excel
+        label, url = r["label"].strip(), r["url"].strip()
+        if not label or not url:
             continue
-        start, end = to_seconds(r["start"]), to_seconds(r["end"])
-        if end - start < CLIP_SECONDS:
-            print(f"[{i}] skip: segment shorter than {CLIP_SECONDS}s")
+        try:
+            start, end = to_seconds(r["start"]), to_seconds(r["end"])
+        except ValueError as e:
+            print(f"line {i}: {e} -> fix it in annotations.csv")
+            fail += 1
+            continue
+        if end - start < MIN_S:
+            print(f"line {i}: segment shorter than {MIN_S} s, skipped")
             continue
         vid = video_id(url)
-        dest = OUT / label
-        dest.mkdir(exist_ok=True)
-        stem = f"{vid}_{int(start)}"
-        if list(dest.glob(stem + "_*.wav")):
-            print(f"[{i}] already done: {stem}")
+        rel = f"{label}/{vid}_{int(start)}.wav"
+        dst = OUT / rel
+        if dst.exists():
+            ok += 1
             continue
-
-        raw = TMP / f"{stem}.%(ext)s"
-        print(f"[{i}] {label}: {url} {start:.0f}-{end:.0f}s")
-        dl = subprocess.run([
-            sys.executable, "-m", "yt_dlp", "-q", "-f", "bestaudio",
-            "--download-sections", f"*{start}-{end}",
-            "-o", str(raw), url], capture_output=True, text=True)
-        got = list(TMP.glob(stem + ".*"))
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        for f in TMP.glob("*"):
+            f.unlink()
+        print(f"line {i}: {label} {vid} {start:.0f}-{end:.0f} s")
+        try:
+            dl = subprocess.run([sys.executable, "-m", "yt_dlp", "-q", "--no-warnings",
+                                 "--ffmpeg-location", ffmpeg,
+                                 "-f", "bestaudio", "--download-sections", f"*{start}-{end}",
+                                 "-o", str(TMP / "seg.%(ext)s"), url],
+                                capture_output=True, text=True, timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            print(f"   timeout after {TIMEOUT} s, skipped (run the script again later)")
+            fail += 1
+            continue
+        got = [f for f in TMP.glob("seg.*") if not f.name.endswith(".part")]
         if dl.returncode != 0 or not got:
             print("   download failed:", (dl.stderr or "").strip()[-200:])
+            fail += 1
             continue
-
-        wav = TMP / f"{stem}.wav"
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(got[0]),
-                        "-ac", "1", "-ar", str(SR), str(wav)], check=True)
-        # cut into fixed-length clips
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav),
-                        "-f", "segment", "-segment_time", str(CLIP_SECONDS),
-                        "-c", "copy", str(dest / f"{stem}_%02d.wav")], check=True)
-        clips = sorted(dest.glob(stem + "_*.wav"))
-        # drop a last clip that is too short (< 3 s)
-        if clips and clips[-1].stat().st_size < SR * 2 * 3:
-            clips[-1].unlink()
-            clips = clips[:-1]
-        for c in clips:
-            w.writerow([c.relative_to(OUT).as_posix(), label, vid, url, start, end,
-                        r.get("vehicle", ""), r.get("diagnosed_by", ""),
-                        r.get("recorded_where", "")])
-        log.flush()
-        for f in got + [wav]:
-            f.unlink(missing_ok=True)
-        print(f"   {len(clips)} clips")
-    log.close()
-    print("\nDone ->", OUT)
+        conv = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(got[0]),
+                               "-t", str(end - start), "-ac", "1", "-ar", "16000",
+                               "-sample_fmt", "s16", str(dst)], capture_output=True, text=True)
+        if conv.returncode != 0:
+            print("   ffmpeg failed:", conv.stderr.strip()[-200:])
+            fail += 1
+            continue
+        done[rel] = {"file": rel, "label": label, "video_id": vid, "url": url,
+                     "start_s": start, "end_s": end, "vehicle": r.get("vehicle", ""),
+                     "diagnosed_by": r.get("diagnosed_by", ""),
+                     "recorded_where": r.get("recorded_where", "")}
+        with open(log_path, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS)
+            w.writeheader()
+            w.writerows(done.values())
+        ok += 1
+    for f in TMP.glob("*"):
+        f.unlink()
+    print(f"\n{ok} segments ready, {fail} failed -> {OUT}")
 
 
 if __name__ == "__main__":
