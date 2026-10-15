@@ -1,101 +1,108 @@
 {
   "features": "MFCC(20)+delta+5 spectral, mean/std, 1.5 s windows",
-  "clips": 1324,
-  "windows": 2288,
+  "clips": 1346,
+  "windows": 2352,
   "group_split": {
-    "best_model": "svm_rbf",
+    "best_model": "random_forest",
     "val_macro_f1": {
-      "logreg": 0.497,
-      "svm_rbf": 0.499,
-      "random_forest": 0.482
+      "logreg": 0.447,
+      "svm_rbf": 0.554,
+      "random_forest": 0.584
     },
-    "test_accuracy": 0.662,
-    "test_macro_f1": 0.593,
+    "test_accuracy": 0.702,
+    "test_macro_f1": 0.616,
     "per_class": {
       "bad_ignition": {
-        "precision": 0.6666666666666666,
-        "recall": 0.4444444444444444,
-        "f1-score": 0.5333333333333333,
+        "precision": 0.7777777777777778,
+        "recall": 0.7777777777777778,
+        "f1-score": 0.7777777777777778,
         "support": 9.0
       },
       "belt": {
-        "precision": 0.6571428571428571,
+        "precision": 0.92,
         "recall": 0.8518518518518519,
-        "f1-score": 0.7419354838709677,
+        "f1-score": 0.8846153846153846,
         "support": 27.0
       },
       "dead_battery": {
-        "precision": 0.7142857142857143,
-        "recall": 0.625,
+        "precision": 0.5384615384615384,
+        "recall": 0.875,
         "f1-score": 0.6666666666666666,
         "support": 8.0
       },
+      "knock": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 3.0
+      },
       "low_oil": {
-        "precision": 0.7058823529411765,
+        "precision": 0.8571428571428571,
         "recall": 0.75,
-        "f1-score": 0.7272727272727273,
+        "f1-score": 0.8,
         "support": 16.0
       },
       "misfire": {
-        "precision": 0.41935483870967744,
-        "recall": 0.8125,
-        "f1-score": 0.5531914893617021,
+        "precision": 0.48484848484848486,
+        "recall": 1.0,
+        "f1-score": 0.6530612244897959,
         "support": 16.0
       },
       "normal": {
-        "precision": 0.7924528301886793,
-        "recall": 0.7368421052631579,
-        "f1-score": 0.7636363636363637,
+        "precision": 0.9069767441860465,
+        "recall": 0.6842105263157895,
+        "f1-score": 0.78,
         "support": 57.0
       },
       "normal_brakes": {
-        "precision": 0.6428571428571429,
-        "recall": 0.8181818181818182,
-        "f1-score": 0.72,
+        "precision": 0.35714285714285715,
+        "recall": 0.45454545454545453,
+        "f1-score": 0.4,
         "support": 11.0
       },
       "normal_startup": {
-        "precision": 0.3333333333333333,
-        "recall": 0.4444444444444444,
-        "f1-score": 0.38095238095238093,
+        "precision": 0.5,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.5714285714285714,
         "support": 9.0
       },
       "power_steering": {
-        "precision": 0.8,
-        "recall": 0.6,
-        "f1-score": 0.6857142857142857,
+        "precision": 0.7368421052631579,
+        "recall": 0.7,
+        "f1-score": 0.717948717948718,
         "support": 20.0
       },
       "tappet": {
         "precision": 1.0,
-        "recall": 0.3,
-        "f1-score": 0.46153846153846156,
+        "recall": 0.4,
+        "f1-score": 0.5714285714285714,
         "support": 10.0
       },
       "worn_brakes": {
-        "precision": 1.0,
-        "recall": 0.16666666666666666,
-        "f1-score": 0.2857142857142857,
+        "precision": 0.6666666666666666,
+        "recall": 0.5,
+        "f1-score": 0.5714285714285714,
         "support": 12.0
       },
-      "accuracy": 0.6615384615384615,
+      "accuracy": 0.702020202020202,
       "macro avg": {
-        "precision": 0.7029068851022952,
-        "recall": 0.595448302804762,
-        "f1-score": 0.5927232252782887,
-        "support": 195.0
+        "precision": 0.6454882526241156,
+        "recall": 0.6383376897631284,
+        "f1-score": 0.6161962904820047,
+        "support": 198.0
       },
       "weighted avg": {
-        "precision": 0.7215496298243067,
-        "recall": 0.6615384615384615,
-        "f1-score": 0.6527543834773655,
-        "support": 195.0
+        "precision": 0.7600133420807729,
+        "recall": 0.702020202020202,
+        "f1-score": 0.7090918605204319,
+        "support": 198.0
       }
     },
     "labels": [
       "bad_ignition",
       "belt",
       "dead_battery",
+      "knock",
       "low_oil",
       "misfire",
       "normal",
@@ -107,264 +114,53 @@
     ],
     "confusion": [
       [
-        4,
-        1,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         1,
-        0,
         1,
-        0,
-        2,
-        0,
         0,
         0
       ],
       [
         0,
         23,
-        0,
-        0,
-        1,
-        1,
-        0,
-        2,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        2,
-        5,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        1,
-        12,
-        0,
-        0,
-        0,
         3,
         0,
         0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        13,
-        3,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        9,
-        42,
-        3,
-        0,
-        3,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        9,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        2,
-        0,
-        0,
         1,
         0,
-        2,
         0,
-        4,
+        0,
         0,
         0,
         0
       ],
       [
-        0,
-        4,
-        1,
-        1,
-        0,
-        2,
-        0,
-        0,
-        12,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
         0,
         0,
         7,
         0,
         0,
+        1,
         0,
         0,
-        3,
+        0,
+        0,
+        0,
         0
       ],
       [
-        0,
-        5,
-        0,
-        1,
-        0,
-        1,
-        2,
         1,
         0,
         0,
-        2
-      ]
-    ],
-    "test_accuracy_by_dataset": {
-      "kaggle": "101/144 (70%)",
-      "hf": "28/47 (60%)",
-      "vafd": "0/4 (0%)"
-    }
-  },
-  "random_split": {
-    "best_model": "svm_rbf",
-    "val_macro_f1": {
-      "logreg": 0.596,
-      "svm_rbf": 0.785,
-      "random_forest": 0.766
-    },
-    "test_accuracy": 0.839,
-    "test_macro_f1": 0.792,
-    "per_class": {
-      "bad_ignition": {
-        "precision": 0.5555555555555556,
-        "recall": 0.5555555555555556,
-        "f1-score": 0.5555555555555556,
-        "support": 9.0
-      },
-      "belt": {
-        "precision": 0.8928571428571429,
-        "recall": 0.8928571428571429,
-        "f1-score": 0.8928571428571429,
-        "support": 28.0
-      },
-      "dead_battery": {
-        "precision": 0.6666666666666666,
-        "recall": 0.75,
-        "f1-score": 0.7058823529411765,
-        "support": 8.0
-      },
-      "low_oil": {
-        "precision": 0.625,
-        "recall": 0.625,
-        "f1-score": 0.625,
-        "support": 16.0
-      },
-      "misfire": {
-        "precision": 0.9411764705882353,
-        "recall": 0.9411764705882353,
-        "f1-score": 0.9411764705882353,
-        "support": 17.0
-      },
-      "normal": {
-        "precision": 0.9636363636363636,
-        "recall": 0.9137931034482759,
-        "f1-score": 0.9380530973451328,
-        "support": 58.0
-      },
-      "normal_brakes": {
-        "precision": 0.7692307692307693,
-        "recall": 0.9090909090909091,
-        "f1-score": 0.8333333333333334,
-        "support": 11.0
-      },
-      "normal_startup": {
-        "precision": 0.75,
-        "recall": 0.6666666666666666,
-        "f1-score": 0.7058823529411765,
-        "support": 9.0
-      },
-      "power_steering": {
-        "precision": 0.7894736842105263,
-        "recall": 0.75,
-        "f1-score": 0.7692307692307693,
-        "support": 20.0
-      },
-      "tappet": {
-        "precision": 0.8461538461538461,
-        "recall": 1.0,
-        "f1-score": 0.9166666666666666,
-        "support": 11.0
-      },
-      "worn_brakes": {
-        "precision": 0.8333333333333334,
-        "recall": 0.8333333333333334,
-        "f1-score": 0.8333333333333334,
-        "support": 12.0
-      },
-      "accuracy": 0.8391959798994975,
-      "macro avg": {
-        "precision": 0.7848258029302216,
-        "recall": 0.8034066528672835,
-        "f1-score": 0.7924519158902293,
-        "support": 199.0
-      },
-      "weighted avg": {
-        "precision": 0.8418741049129836,
-        "recall": 0.8391959798994975,
-        "f1-score": 0.8394055026664979,
-        "support": 199.0
-      }
-    },
-    "labels": [
-      "bad_ignition",
-      "belt",
-      "dead_battery",
-      "low_oil",
-      "misfire",
-      "normal",
-      "normal_brakes",
-      "normal_startup",
-      "power_steering",
-      "tappet",
-      "worn_brakes"
-    ],
-    "confusion": [
-      [
-        5,
         0,
-        0,
-        3,
+        1,
         0,
         0,
         0,
@@ -375,44 +171,20 @@
       ],
       [
         1,
-        25,
         0,
+        1,
         0,
-        0,
-        0,
+        12,
         0,
         0,
         1,
+        0,
         1,
+        0,
         0
       ],
       [
-        1,
         0,
-        6,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1
-      ],
-      [
-        0,
-        2,
-        0,
-        10,
-        0,
-        0,
-        0,
-        1,
-        2,
-        0,
-        1
-      ],
-      [
         0,
         0,
         0,
@@ -422,19 +194,279 @@
         0,
         0,
         0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
         1,
+        0,
+        1,
+        8,
+        39,
+        6,
+        2,
+        0,
+        0,
         0
       ],
       [
         0,
         0,
         0,
+        0,
+        0,
+        0,
+        4,
+        5,
         1,
         1,
-        53,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        3
+      ],
+      [
+        0,
+        1,
+        1,
+        3,
+        0,
+        1,
+        0,
+        0,
+        0,
+        14,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
         2,
         1,
         0,
+        6
+      ]
+    ],
+    "test_accuracy_by_dataset": {
+      "kaggle": "106/144 (74%)",
+      "hf": "33/47 (70%)",
+      "vafd": "0/4 (0%)",
+      "youtube": "0/3 (0%)"
+    }
+  },
+  "random_split": {
+    "best_model": "random_forest",
+    "val_macro_f1": {
+      "logreg": 0.554,
+      "svm_rbf": 0.742,
+      "random_forest": 0.747
+    },
+    "test_accuracy": 0.817,
+    "test_macro_f1": 0.797,
+    "per_class": {
+      "bad_ignition": {
+        "precision": 0.75,
+        "recall": 0.6,
+        "f1-score": 0.6666666666666666,
+        "support": 10.0
+      },
+      "belt": {
+        "precision": 1.0,
+        "recall": 0.8888888888888888,
+        "f1-score": 0.9411764705882353,
+        "support": 27.0
+      },
+      "dead_battery": {
+        "precision": 0.75,
+        "recall": 0.75,
+        "f1-score": 0.75,
+        "support": 8.0
+      },
+      "knock": {
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1-score": 0.8571428571428571,
+        "support": 3.0
+      },
+      "low_oil": {
+        "precision": 0.6,
+        "recall": 0.5625,
+        "f1-score": 0.5806451612903226,
+        "support": 16.0
+      },
+      "misfire": {
+        "precision": 0.7727272727272727,
+        "recall": 1.0,
+        "f1-score": 0.8717948717948718,
+        "support": 17.0
+      },
+      "normal": {
+        "precision": 0.92,
+        "recall": 0.8070175438596491,
+        "f1-score": 0.8598130841121495,
+        "support": 57.0
+      },
+      "normal_brakes": {
+        "precision": 0.5555555555555556,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.6666666666666666,
+        "support": 12.0
+      },
+      "normal_startup": {
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.6666666666666666,
+        "support": 9.0
+      },
+      "power_steering": {
+        "precision": 0.7391304347826086,
+        "recall": 0.85,
+        "f1-score": 0.7906976744186046,
+        "support": 20.0
+      },
+      "tappet": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 11.0
+      },
+      "worn_brakes": {
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.9090909090909091,
+        "support": 12.0
+      },
+      "accuracy": 0.8168316831683168,
+      "macro avg": {
+        "precision": 0.7920066608110087,
+        "recall": 0.8159783138401561,
+        "f1-score": 0.7966967523698291,
+        "support": 202.0
+      },
+      "weighted avg": {
+        "precision": 0.8335427673202102,
+        "recall": 0.8168316831683168,
+        "f1-score": 0.8192727006781738,
+        "support": 202.0
+      }
+    },
+    "labels": [
+      "bad_ignition",
+      "belt",
+      "dead_battery",
+      "knock",
+      "low_oil",
+      "misfire",
+      "normal",
+      "normal_brakes",
+      "normal_startup",
+      "power_steering",
+      "tappet",
+      "worn_brakes"
+    ],
+    "confusion": [
+      [
+        6,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        24,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        9,
+        0,
+        2,
+        1,
+        1,
+        2,
         0,
         0
       ],
@@ -443,6 +475,35 @@
         0,
         0,
         0,
+        0,
+        17,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        3,
+        46,
+        6,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
         0,
         1,
         10,
@@ -455,29 +516,32 @@
         1,
         0,
         0,
-        2,
         0,
         0,
+        0,
+        1,
         0,
         6,
-        0,
+        1,
         0,
         0
       ],
       [
-        1,
-        1,
-        2,
         0,
         0,
         1,
+        1,
+        1,
         0,
         0,
-        15,
+        0,
+        0,
+        17,
         0,
         0
       ],
       [
+        0,
         0,
         0,
         0,
@@ -493,8 +557,9 @@
       [
         0,
         0,
-        1,
         0,
+        0,
+        1,
         0,
         0,
         1,
@@ -506,19 +571,20 @@
     ]
   },
   "anomaly_isolation_forest": {
-    "test_auc_fault_vs_healthy": 0.774,
+    "test_auc_fault_vs_healthy": 0.822,
     "mean_score_by_label": {
-      "bad_ignition": 0.497,
-      "belt": 0.534,
-      "dead_battery": 0.566,
-      "low_oil": 0.486,
-      "misfire": 0.425,
-      "normal": 0.421,
-      "normal_brakes": 0.434,
-      "normal_startup": 0.519,
-      "power_steering": 0.456,
-      "tappet": 0.487,
-      "worn_brakes": 0.507
+      "bad_ignition": 0.507,
+      "belt": 0.566,
+      "dead_battery": 0.529,
+      "knock": 0.52,
+      "low_oil": 0.459,
+      "misfire": 0.488,
+      "normal": 0.418,
+      "normal_brakes": 0.419,
+      "normal_startup": 0.528,
+      "power_steering": 0.47,
+      "tappet": 0.484,
+      "worn_brakes": 0.491
     }
   }
 }

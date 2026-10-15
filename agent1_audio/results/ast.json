@@ -1,0 +1,286 @@
+{
+  "embedding": "MIT/ast-finetuned-audioset-10-10-0.4593",
+  "window_s": 1.5,
+  "best_model": "logreg_C1",
+  "val_macro_f1": {
+    "logreg_C0.1": 0.682,
+    "logreg_C1": 0.684,
+    "svm_rbf": 0.681
+  },
+  "test_macro_f1": 0.717,
+  "test_accuracy": 0.788,
+  "test_macro_f1_with_context": 0.739,
+  "test_accuracy_with_context": 0.803,
+  "anomaly_auc": 0.811,
+  "per_class": {
+    "bad_ignition": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 9.0
+    },
+    "belt": {
+      "precision": 0.9642857142857143,
+      "recall": 1.0,
+      "f1-score": 0.9818181818181818,
+      "support": 27.0
+    },
+    "dead_battery": {
+      "precision": 0.6363636363636364,
+      "recall": 0.875,
+      "f1-score": 0.7368421052631579,
+      "support": 8.0
+    },
+    "knock": {
+      "precision": 0.16666666666666666,
+      "recall": 0.3333333333333333,
+      "f1-score": 0.2222222222222222,
+      "support": 3.0
+    },
+    "low_oil": {
+      "precision": 0.8666666666666667,
+      "recall": 0.8125,
+      "f1-score": 0.8387096774193549,
+      "support": 16.0
+    },
+    "misfire": {
+      "precision": 0.48484848484848486,
+      "recall": 1.0,
+      "f1-score": 0.6530612244897959,
+      "support": 16.0
+    },
+    "normal": {
+      "precision": 1.0,
+      "recall": 0.7543859649122807,
+      "f1-score": 0.86,
+      "support": 57.0
+    },
+    "normal_brakes": {
+      "precision": 0.6666666666666666,
+      "recall": 0.5454545454545454,
+      "f1-score": 0.6,
+      "support": 11.0
+    },
+    "normal_startup": {
+      "precision": 0.7,
+      "recall": 0.7777777777777778,
+      "f1-score": 0.7368421052631579,
+      "support": 9.0
+    },
+    "power_steering": {
+      "precision": 0.875,
+      "recall": 0.7,
+      "f1-score": 0.7777777777777778,
+      "support": 20.0
+    },
+    "tappet": {
+      "precision": 1.0,
+      "recall": 0.3,
+      "f1-score": 0.46153846153846156,
+      "support": 10.0
+    },
+    "worn_brakes": {
+      "precision": 0.6666666666666666,
+      "recall": 0.8333333333333334,
+      "f1-score": 0.7407407407407407,
+      "support": 12.0
+    },
+    "accuracy": 0.7878787878787878,
+    "macro avg": {
+      "precision": 0.7522637085137084,
+      "recall": 0.7443154129009394,
+      "f1-score": 0.7174627080444043,
+      "support": 198.0
+    },
+    "weighted avg": {
+      "precision": 0.850425248152521,
+      "recall": 0.7878787878787878,
+      "f1-score": 0.7941931154323572,
+      "support": 198.0
+    }
+  },
+  "labels": [
+    "bad_ignition",
+    "belt",
+    "dead_battery",
+    "knock",
+    "low_oil",
+    "misfire",
+    "normal",
+    "normal_brakes",
+    "normal_startup",
+    "power_steering",
+    "tappet",
+    "worn_brakes"
+  ],
+  "confusion": [
+    [
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      7,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      13,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0,
+      9,
+      43,
+      0,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6,
+      0,
+      0,
+      0,
+      5
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      4,
+      1,
+      0,
+      0,
+      0,
+      0,
+      14,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      0,
+      0,
+      0,
+      0,
+      3,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      10
+    ]
+  ]
+}
