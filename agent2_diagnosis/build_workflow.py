@@ -162,7 +162,7 @@ else:
         node("Agent 2", "@n8n/n8n-nodes-langchain.agent", 1.7,
              {"promptType": "define", "text": "={{ $json.user_message }}", "hasOutputParser": False,
               "options": {"systemMessage": "={{ $json.system_prompt }}", "maxIterations": 4, "returnIntermediateSteps": True}},
-             [520, 100]),
+             [520, 100], **({"onError": "continueRegularOutput"} if RESCUE_ON else {})),  # a 7B loop on empty search results ends in an error: treat it as "no answer", the rescue path then ends as insufficient
         LLM_NODE,
         node("rag_search", "@n8n/n8n-nodes-langchain.toolHttpRequest", 1.1,
              {"toolDescription": "Search the car manuals and OBD-II code database. Input: query = a short search text "
