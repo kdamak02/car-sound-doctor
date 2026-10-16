@@ -130,10 +130,11 @@ st.caption("Page de test : elle joue le rôle de Telegram et de l'Agent 1, et en
 
 # ------------------------------------------------------------------ step 1: the case
 
-defaults = {"make": "Renault", "model": "Clio", "year": 2015, "fuel": "diesel", "symptom": "grincement au démarrage à froid",
-            "text": "Ma Clio 2015 diesel grince au démarrage à froid.", "context": "startup", "label": "belt", "prob": 0.78,
-            "confidence": "medium", "anomaly": 0.81, "freq": 2600.0, "periodic": True,
-            "audio_summary": "Sifflement aigu qui suit le régime du moteur.", "no_audio": False}
+defaults = {"make": "Renault", "model": "Clio", "year": 2015, "fuel": "diesel",  # default form = a case the manuals cover (Clio p. 225)
+            "symptom": "le démarreur ne tourne pas, j'entends seulement un clic, le voyant de batterie est allumé",
+            "text": "Ma Clio 2015 diesel ne démarre pas ce matin, j'entends juste un clic.", "context": "startup", "label": "dead_battery",
+            "prob": 0.7, "confidence": "medium", "anomaly": 0.88, "freq": 120.0, "periodic": False,
+            "audio_summary": "Un seul clic sec au tour de clé, aucun bruit de démarreur qui tourne.", "no_audio": False}
 if example != "(formulaire vide)":
     ex = json.loads((ROOT / "agent2_diagnosis/tests/cases" / example).read_text("utf-8"))
     a, v = ex["audio"], ex["vehicle"]

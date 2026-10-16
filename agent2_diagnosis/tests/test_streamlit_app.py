@@ -54,7 +54,7 @@ def test_two_pass_flow():
         at.run()
         assert not at.exception
         # pass 1 request is a valid case record, round 0, with the Agent 1 style audio block
-        assert errors("case_record", sent[0]) == [] and sent[0]["round"] == 0 and sent[0]["audio"]["label"] == "belt"
+        assert errors("case_record", sent[0]) == [] and sent[0]["round"] == 0 and sent[0]["audio"]["label"] == "dead_battery"
         text = " ".join(m.value for m in at.markdown)
         assert "Courroie usée" in text and "70 %" in text and "Fissures sur la courroie" in text
         # the send button stays disabled until every check is answered
