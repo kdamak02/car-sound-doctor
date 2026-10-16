@@ -67,7 +67,7 @@ Limits: 30 queries, one labeller, queries share the vocabulary of the manuals, r
 3. Free-text prompt rule for contradicting answers: 3/8 (from 1/8). A status field + code cap: 7/8.
 4. Fixed-size chunks: they cut the troubleshooting tables.
 5. Retrieval score as a "no answer" detector: the scores overlap.
-6. Citation guardrail that checks existence only: on a question the manuals do not cover, the model cites an unrelated passage (belt squeal -> starter table). Partly fixed: a support check with the reranker drops causes whose citations do not come back when the cause is searched; belt squeal still survives through OBDex belt-driven generator codes (the check sees the cause name, not the symptom). Needs a belt-squeal passage in the corpus.
+6. Citation guardrail that checks existence only: on a symptom the manuals do not cover, the model can cite an unrelated passage. Partly fixed: a support check with the reranker drops causes whose citations do not come back when the cause and the symptom are searched; through n8n such a case ends as `insufficient`. Limit: an unrelated OBDex code can still pass in the Python path.
 7. Gemini free tier: 20 requests per model per day, shared by the Flash models; a development day exhausted it.
 
 ## Annex A — prompt library

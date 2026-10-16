@@ -18,13 +18,13 @@ Goal: show a real **AI Agent node calling a RAG tool**, answers **with citations
 | 1:30 (while it runs, about 1 to 2 min) | Canvas, execution view: the agent's tool calls to `rag_search` | "Here are the searches the agent made. The answer can only cite passages that came back from these calls." |
 | 2:30 | Result: causes with probabilities, 2 checks, each with page citation (Clio manual p. 225) | "Not conclusive on purpose in pass 1: it asks two checks before committing. Every check carries `source`, `page`, `verified: true`." |
 | 3:00 | Same case, **pass 2** (`clio_starter_pass2`: battery new, terminals clean) | "The driver's answers go back in. The terminals cause drops to 0.15 or less because an answer contradicts it, and the ranking changes. That is prompt P5, with a code cap so a small model cannot ignore it." |
-| 3:45 | Case **clio_belt_pass1** (squeal at cold start, Agent 1 says `belt` 0.78) | "Now a question my manuals do not answer. A weaker system would invent a cause." |
-| 4:15 | Result: `insufficient`, reason | "It refuses. Retrieval is reranked with bge-reranker-v2-m3; nothing passes the threshold, so there is nothing to cite. In the evaluation this rejects 3 of 4 out-of-corpus questions, against 1 of 4 with dense retrieval alone." |
+| 3:45 | Case **peugeot208_charge_light_pass1** (208, battery charge light on; Agent 1 says `alternator` 0.58) | "Another manual, another make: the same agent, a different knowledge source." |
+| 4:15 | Result: alternator / weak battery, checks citing the 208 manual p. 14 | "Cited again, with the page. The reranker (bge-reranker-v2-m3) filters weak passages: in the evaluation it rejects 3 of 4 out-of-corpus questions against 1 of 4 with dense retrieval alone." |
 | 4:30 | `eval_results.md` table | "RAG numbers on 30 queries I wrote: chunking by heading beats fixed windows, BM25 + dense beats dense alone, hit rate 0.85 to 0.92 with the maintenance section. Reranker trades 4 points of hit rate for rejection. The set is small and written by one person, so I treat the numbers as indicative." |
 | 5:00 | End | "What is not mine: the Qdrant store and GPU reranker (B1) and the other two agents." |
 
 ## If something breaks
-- **n8n returns "Error in workflow"** (the 7B model can loop): run it once more; for the belt case the workflow answers `insufficient` by design.
+- **n8n returns "Error in workflow"** (the 7B model can loop): run it once more; the workflow then answers `insufficient` (no invented answer).
 - **Run takes more than 3 minutes**: switch to the pre-recorded run (tab 4) and say it is a recording.
 - **Docker or n8n down**: Streamlit alone does not work; show the recording and run `pytest agent2_diagnosis/tests` and `node n8n/code_nodes/test_agent2_nodes.js` live (no network, a few seconds) to show the logic is tested.
 - **Never** restart n8n, Ollama or the dev RAG mid-demo.

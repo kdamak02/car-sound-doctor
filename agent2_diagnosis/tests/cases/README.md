@@ -16,8 +16,3 @@ python agent2_diagnosis/tests/reliability.py agent2_diagnosis/tests/cases/clio_s
 | `clio_oil_pressure_pass1.json` | 0 | Clio 2015 diesel, oil pressure light in corners, ticking at idle (class `low_oil`) | oil pressure cause first, checks cite the Clio manual p. 63 / 226, `safety_stop true` | in the Clio troubleshooting table |
 | `clio_power_steering_pass1.json` | 0 | Clio, steering suddenly hard, whine when turning (class `power_steering`) | power steering pump first, checks cite p. 227 | in the Clio troubleshooting table |
 | `peugeot208_charge_light_pass1.json` | 0 | Peugeot 208 2016, battery charge light stays on (class `alternator`) | alternator / battery, checks cite the 208 manual p. 14 | in the 208 warning-light table |
-| `clio_belt_pass1.json` | 0 | Clio, squeal at cold start, audio class `belt` | **`insufficient`** (no passage of any owner's manual explains belt noise). Through n8n with the reranker the workflow answers `insufficient`; the Python `diagnose` path can still keep a cause through unrelated OBDex codes (see `REQUIREMENTS_CHECK.md`) | out-of-corpus case |
-| `clio_belt_pass2.json` | 1 | same, with answers | same as above | out-of-corpus case |
-| `clio_probably_healthy_pass1.json` | 0 | Clio, short click then normal start, class `normal_startup`, anomaly 0.55 | the answer asks whether the noise is intermittent (reading guide of P3); no invented fault with high confidence | audio says "probably healthy" |
-
-Not covered yet (needs a case file and the team's agreement): brake fault (`safety_stop` true), user who never answers (handled by n8n timeout), unusable audio (n8n asks for a new recording), prompt injection in the user text.

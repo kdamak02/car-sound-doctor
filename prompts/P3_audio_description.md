@@ -50,7 +50,7 @@ If `audio.status` is `unusable_audio` the text is replaced by: "No usable audio:
 
 | Case | Input | Expected |
 |---|---|---|
-| mock belt | `contracts/examples/agent1_output.json` | French: "Courroie qui siffle", probability 71 %, unusualness "high", reading guide "agree" |
+| mock case | `contracts/examples/agent1_output.json` | French: "Courroie qui siffle", probability 71 %, unusualness "high", reading guide "agree" |
 | unusable | `{"status": "unusable_audio", ...}` | text-only sentence, no crash |
 
 ## Versions
@@ -65,7 +65,7 @@ If `audio.status` is `unusable_audio` the text is replaced by: "No usable audio:
 **Failure: the audio score was read the wrong way.** Agent 1 defines `anomaly_score` as a *percentile against healthy engines* (0.5 = a typical
 healthy sound). P3 v1 told the model "0 = healthy engine, 1 = very unusual" and gave raw numbers to interpret.
 
-| | Text given to the model (mock case, belt) |
+| | Text given to the model (mock case) |
 |---|---|
 | Before (v1) | `classifier confidence: medium; anomaly score: 0.82 (0 = healthy engine, 1 = very unusual)` |
 | After (v2) | `Unusualness compared with healthy engines: high` and `Reading guide: The sound class and the anomaly score agree: start from the most likely classes.` |

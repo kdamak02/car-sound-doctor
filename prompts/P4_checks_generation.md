@@ -71,7 +71,7 @@ User message built by the code: vehicle, driver's description, language, P3 text
 
 | Case | Input | Expected |
 |---|---|---|
-| belt mock | `contracts/examples/case_record.json`, mock `/search` | belt cause first, checks cite the mock chunk ids |
+| mock case | `contracts/examples/case_record.json`, mock `/search` | first cause from the mock case, checks cite the mock chunk ids |
 | knocking Kia Rio | real index, "knocking noise when I accelerate, oil light came on once" | low-oil cause among the causes; no cause cited only from a knock-sensor code |
 
 ## Versions
@@ -106,7 +106,7 @@ An offline replica of the agent loop made the failure visible: of 6 runs only 3 
 
 Two other causes were not prompt problems and are documented in the report: the GPU memory was full (generation fell from 48 to 8 tokens/s) and n8n's Structured Output Parser / Auto-fixing parser did not help ("Model output doesn't fit required format").
 
-**3. Open, not fixed: a citation that exists is not a citation that supports.** For a question the manuals do not cover (belt squeal at cold start), the 7B agent cited the Clio *starter* table for "Sifflement de la courroie". The guardrail only checks that the cited chunk was retrieved. Planned: a reranker / cross-encoder support check.
+**3. Open, not fixed: a citation that exists is not a citation that supports.** For a symptom the manuals do not cover, the 7B agent cited an unrelated table of the Clio manual. The guardrail only checks that the cited chunk was retrieved. Planned: a reranker / cross-encoder support check.
 
 ## Failure to watch
 

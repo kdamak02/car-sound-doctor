@@ -140,7 +140,7 @@ if example != "(formulaire vide)":
     a, v = ex["audio"], ex["vehicle"]
     defaults.update(make=v.get("make") or "", model=v.get("model") or "", year=v.get("year") or 0, fuel=v.get("fuel") or "",
                     symptom=ex["symptom"]["description"], text=ex["user_input"]["text"], context=ex["symptom"]["context"],
-                    label=a.get("label") or "belt", prob=(a["top3"][0]["prob"] if a.get("top3") else 0.5),
+                    label=a.get("label") or "dead_battery", prob=(a["top3"][0]["prob"] if a.get("top3") else 0.5),
                     confidence=a["confidence"], anomaly=a["anomaly_score"], freq=a["description"].get("dominant_freq_hz") or 0.0,
                     periodic=bool(a["description"].get("periodic")), audio_summary=a["description"]["summary"],
                     no_audio=a["status"] != "ok")
