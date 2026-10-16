@@ -88,7 +88,7 @@ def reset():
 
 def show_result(res: dict, round_: int):
     if res.get("insufficient"):
-        st.warning(f"Pas de réponse fiable : {res.get('reason') or 'les manuels ne permettent pas de conclure'}. "
+        st.warning(f"Pas de réponse fiable : {res.get('reason') or 'les manuels ne permettent pas de conclure'}. Les manuels fournis ne couvrent peut-être pas ce symptôme (essayez les cas « oil_pressure », « power_steering », « charge_light », « starter »). "
                    "Le système enverrait le message « informations insuffisantes ».")
         return
     if res.get("safety_stop"):
@@ -117,7 +117,7 @@ with st.sidebar:
     st.header("Réglages")
     url = st.text_input("Webhook Agent 2 (n8n)", DEFAULT_URL)
     timeout = st.slider("Délai max (secondes)", 30, 400, 300)
-    st.caption("Un appel dure environ 40 secondes et consomme 3 à 4 requêtes Gemini (quota gratuit limité).")
+    st.caption("Un appel dure de 40 secondes à 2 minutes et demie (modèle local + reranker sur CPU). Avec Gemini : 3 à 4 requêtes du quota gratuit.")
     st.divider()
     st.caption("Cas d'exemple")
     example = st.selectbox("Charger un cas", ["(formulaire vide)"] + [p.name for p in CASES])
@@ -175,7 +175,7 @@ if go:
     case = build_case({"make": make, "model": model, "year": int(year), "fuel": fuel, "text": text, "symptom": symptom,
                        "context": context, "no_audio": no_audio, "label": label, "prob": prob, "anomaly": anomaly,
                        "confidence": confidence, "freq": freq, "periodic": periodic, "audio_summary": audio_summary})
-    with st.spinner("L'agent cherche dans les manuels et réfléchit (environ 40 secondes)..."):
+    with st.spinner("L'agent cherche dans les manuels et réfléchit (jusqu'à 2 minutes et demie)..."):
         res, err = call_agent(url, case, timeout)
     st.session_state.error = err
     if res is not None:
