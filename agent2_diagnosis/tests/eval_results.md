@@ -56,3 +56,6 @@ Structure chunking, hybrid, sections symptoms+causes+codes, 30 queries. Reranker
 Reading: the reranker is the only signal that separates "no answer" queries (the dense score does not), at the price of some recall; the threshold is a trade-off chosen on 30 queries, so treat it as indicative. Reordering by reranker score (`DEV_RAG_RERANK_ORDER=true`) gave MRR 0.654 vs 0.615 at 0.10 but the same hit rate. CPU cost: about 4 s per search level.
 
 Support check in Agent 2 (`agent2.supported_causes`): the belt-squeal case no longer cites the starter table but still keeps "belt slippage" through OBDex belt-driven starter/generator codes (the reranker rates them relevant to the cause name). The check works on the cause name, not on the symptom, so it does not close the gap alone; the real fix is a belt-squeal manual passage in the corpus.
+
+## Section `maintenance` applied (Agent 2 now asks for symptoms, causes, codes, maintenance)
+Structure chunking, hybrid, 30 queries: no reranker hit 0.923 / Recall@5 0.869 / MRR 0.732 / no-answer 1/4; with the reranker (threshold 0.03) hit 0.808 / 0.753 / 0.715 / 3/4. The reranker drops the same answerable queries as before, so the `maintenance` gain disappears when it is on.

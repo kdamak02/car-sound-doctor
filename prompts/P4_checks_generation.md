@@ -65,7 +65,7 @@ User message built by the code: vehicle, driver's description, language, P3 text
 | description, language | `symptom.description`, `user_input.language` |
 | audio text | P3 |
 | retrieval level | `fallback_level` of the last `/search` answers |
-| passages | `/search` results, `section` in symptoms, causes, codes |
+| passages | `/search` results, `section` in symptoms, causes, codes, maintenance |
 
 ## Test inputs
 

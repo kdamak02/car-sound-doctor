@@ -4,7 +4,7 @@ LLM + RAG, runs as an AI Agent node in n8n, two passes.
 
 **Input** (from the case record): `vehicle`, `symptom`, `audio` (Agent 1 output), and in pass 2 the
 `check_answers`.
-**Tool**: `POST /search` on the RAG service with `section: ["symptoms", "causes", "codes"]`.
+**Tool**: `POST /search` on the RAG service with `section: ["symptoms", "causes", "codes", "maintenance"]`.
 **Output**: `contracts/agent2_output.schema.json`, every check with a citation of a retrieved chunk.
 
 | Pass | Prompt | Job |
@@ -72,7 +72,7 @@ python agent2_diagnosis/tests/make_eval_queries.py && python agent2_diagnosis/te
 ## Decisions that go beyond the contract (review in the PR)
 - `safety_stop` follows the **most likely** cause (same as the team guardrail); a less likely risky cause only adds a caution sentence to `message_to_user`. Oil pressure is also a safety word.
 - A cause the driver's answers contradict is capped at 0.05 (field `status` of prompt P5, read by the code, not part of `agent2_output`).
-- Proposed, **not applied**: search the sections `symptoms, causes, codes` **and `maintenance`** (measured hit rate 0.92 instead of 0.85, see `tests/eval_results.md`).
+- Applied (this branch): Agent 2 also searches the section `maintenance` (measured hit rate 0.92 instead of 0.85 without the reranker, 0.81 with it, see `tests/eval_results.md`). Agent 3 uses the same section: the team should confirm the overlap is fine. To go back, change `SECTIONS` in `agent2.py` and `filters` in `n8n/code_nodes/agent2_prepare.js`.
 - Reranker (dev RAG only): `BAAI/bge-reranker-v2-m3` (Apache-2.0, ~2.3 GB, downloaded on first start) scores the best 8 passages on CPU (`DEV_RAG_RERANK=false` turns it off, `DEV_RAG_RERANK_MIN` is the threshold, default 0.03). About 4 s per search on CPU, so a run takes 1.5 to 2.5 minutes on a laptop.
 - Citation support check: a cause is kept only if one of its cited passages comes back when its own name is searched (`supported_causes` in `agent2.py`, `supportFilter` in `n8n/code_nodes/agent2_postprocess.js`; `AGENT2_SUPPORT_CHECK=false` / `SUPPORT_CHECK=false` skip it). Limit: it sees the cause name, not the symptom (see `REQUIREMENTS_CHECK.md`).
 - Ollama build: an agent error (a 7B loop on empty search results) counts as no answer, so the case ends as `insufficient`.

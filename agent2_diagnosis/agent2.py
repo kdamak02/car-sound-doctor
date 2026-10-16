@@ -5,7 +5,7 @@ Agent 2 (diagnosis and checks): reference implementation of the logic. Owner: B2
     out = diagnose(case)          # case = contracts/case_record.schema.json, out = agent2_output.schema.json
 
 What it does
-  1. builds RAG queries from the case and calls POST /search (sections symptoms, causes, codes)
+  1. builds RAG queries from the case and calls POST /search (sections symptoms, causes, codes, maintenance)
   2. asks the LLM (prompts/P4 on pass 1, P5 on pass 2 and 3; P3 text for the audio) for causes and checks
   3. keeps only what is grounded: every cause and check must cite a chunk_id that /search really returned
   4. decides in code (not in the LLM): label validity, probabilities, `conclusive`, `safety_stop`, check ids
@@ -41,7 +41,7 @@ MODELS = {"gemini": os.getenv("AGENT2_MODEL", "gemini-3.6-flash"), "claude": os.
           "ollama": os.getenv("AGENT2_MODEL", "qwen2.5:7b")}
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
-SECTIONS = ["symptoms", "causes", "codes"]
+SECTIONS = ["symptoms", "causes", "codes", "maintenance"]
 MAX_ROUNDS = 2  # case_record.round cap
 CONCLUSIVE_PROB, CONCLUSIVE_GAP = 0.6, 0.2
 SUPPORT_CHECK = os.getenv("AGENT2_SUPPORT_CHECK", "true").lower() == "true"  # drop causes whose cited passages the reranker does not tie to the cause

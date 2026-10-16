@@ -48,7 +48,7 @@ The brief also says: *justification matters more than complexity* and *reporting
 | CI runs the tests | OK locally: `agent2_diagnosis/tests` and the Node test added to `.github/workflows/ci.yml` (25 tests pass with the CI command) |
 | One branch per task, pull request, one reviewer | OPEN (no `.git` in this copy) |
 | `tests/cases/`: input case + expected behaviour | OK (`tests/cases/README.md`) |
-| `agent2_diagnosis/README.md`: sections `symptoms, causes, codes` | DEVIATION proposed: add `maintenance` (+7.7 points of hit rate); not applied, needs the team's decision |
+| `agent2_diagnosis/README.md`: sections `symptoms, causes, codes` | DEVIATION applied on `agent2/reranker`: `maintenance` added (+7.7 points of hit rate without the reranker); the team must confirm (Agent 3 also reads that section) |
 
 ## E. Known weaknesses (say them, do not hide them)
 1. **A citation that exists is not a citation that supports.** On a question the manuals do not cover (belt squeal) the 7B model cites an unrelated passage and the guardrail accepts it. Partly fixed: a support check (bge-reranker-v2-m3, `supported_causes` / `supportFilter`) drops a cause whose cited passages do not come back when its own name is searched. Belt squeal no longer cites the starter table. Through n8n (Ollama 7B, reranker on) the workflow now answers `insufficient` (the reranked searches return nothing; the agent errors out, the workflow treats it as no answer); starter pass 1 and 2 still give valid answers (108 s and 138 s on CPU reranking). In the Python path `diagnose` still keeps "belt slippage" through OBDex belt-driven generator codes: the check works on the cause name, not the symptom.

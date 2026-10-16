@@ -141,7 +141,7 @@ assert.strictEqual(postprocess(prepare(freshCase(), P3, SYSTEM, LABELS).ctx, obj
 const p1 = prepare(freshCase(), P3, SYSTEM, LABELS);
 assert(p1.user_message.includes('Courroie qui siffle (probability 71 %') && p1.user_message.includes('Unusualness compared with healthy engines: high'));
 assert(p1.system_prompt.includes('rank the 2 to 5 most likely causes'));
-assert.deepStrictEqual(JSON.parse(p1.filters_json), { section: ['symptoms', 'causes', 'codes'], make: 'Peugeot', model: '208', year: 2020 });
+assert.deepStrictEqual(JSON.parse(p1.filters_json), { section: ['symptoms', 'causes', 'codes', 'maintenance'], make: 'Peugeot', model: '208', year: 2020 });
 const p2 = prepare(answered(1, o1), P3, SYSTEM, LABELS);
 assert(p2.system_prompt.includes('update the probability'));
 assert(p2.user_message.includes('c1:') && p2.user_message.includes('-> non') && p2.user_message.includes('New checks allowed: yes'));
@@ -160,7 +160,7 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
   const search = async (q, f, k) => { calls.push([q, f, k]); return JSON.parse(JSON.stringify(SEARCH)); };
   const r = await retrieveFn({ ...pp, top_k: 3 }, search, 6);
   assert.strictEqual(calls.length, 2); assert.strictEqual(calls[0][2], 3);
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(calls[0][1])), { section: ['symptoms', 'causes', 'codes'], make: 'Peugeot', model: '208', year: 2020 });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(calls[0][1])), { section: ['symptoms', 'causes', 'codes', 'maintenance'], make: 'Peugeot', model: '208', year: 2020 });
   assert(r.full_prompt.includes(`[${P1}]`) && r.full_prompt.includes('Retrieval level: exact_model') && r.full_prompt.includes('rank the 2 to 5 most likely causes'));
   const uniq = JSON.parse(JSON.stringify(r.observations))[0].observation.passages;
   assert.strictEqual(uniq.length, 3); // the same 3 passages came back for both queries: de-duplicated

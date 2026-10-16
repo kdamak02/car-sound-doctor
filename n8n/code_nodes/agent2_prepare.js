@@ -74,7 +74,7 @@ function prepare(c, P3, SYSTEM, LABELS, mode) {  // mode: 'tool' (default) or 'p
   const queries = [...new Set([`${symptom} ${label}`, label ? `${label} causes` : '', answered ? `${symptom} ${answered}` : ''].map((q) => q.trim()).filter(Boolean))];
 
   const v = c.vehicle || {};
-  const filters = { section: ['symptoms', 'causes', 'codes'] };
+  const filters = { section: ['symptoms', 'causes', 'codes', 'maintenance'] };
   for (const k of ['make', 'model', 'year']) if (v[k]) filters[k] = v[k];
 
   return {

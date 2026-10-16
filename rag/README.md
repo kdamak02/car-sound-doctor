@@ -29,7 +29,7 @@ The filters of `/search` rely on these fields. **Same names everywhere.**
 | `language` | `fr` | fr, en |
 | `chunking` | `A` or `B` | to compare both strategies in one collection |
 
-Agent 2 searches `section in [symptoms, causes, codes]`, Agent 3 `section in [procedure, safety, maintenance]`.
+Agent 2 searches `section in [symptoms, causes, codes, maintenance]`, Agent 3 `section in [procedure, safety, maintenance]`.
 
 ## Run the service
 
