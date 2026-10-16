@@ -50,7 +50,7 @@ If `audio.status` is `unusable_audio` the text is replaced by: "No usable audio:
 
 | Case | Input | Expected |
 |---|---|---|
-| mock case | `contracts/examples/agent1_output.json` | French: "Courroie qui siffle", probability 71 %, unusualness "high", reading guide "agree" |
+| mock case | `contracts/examples/agent1_output.json` | French class name, probability 71 %, unusualness "high", reading guide "agree" |
 | unusable | `{"status": "unusable_audio", ...}` | text-only sentence, no crash |
 
 ## Versions
