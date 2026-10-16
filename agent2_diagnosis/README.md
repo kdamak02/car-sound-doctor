@@ -73,4 +73,6 @@ python agent2_diagnosis/tests/make_eval_queries.py && python agent2_diagnosis/te
 - `safety_stop` follows the **most likely** cause (same as the team guardrail); a less likely risky cause only adds a caution sentence to `message_to_user`. Oil pressure is also a safety word.
 - A cause the driver's answers contradict is capped at 0.05 (field `status` of prompt P5, read by the code, not part of `agent2_output`).
 - Proposed, **not applied**: search the sections `symptoms, causes, codes` **and `maintenance`** (measured hit rate 0.92 instead of 0.85, see `tests/eval_results.md`).
-- Known weakness: citations are checked for existence, not for support (see `REQUIREMENTS_CHECK.md`).
+- Reranker (dev RAG only): `BAAI/bge-reranker-v2-m3` (Apache-2.0, ~2.3 GB, downloaded on first start) scores the best 8 passages on CPU (`DEV_RAG_RERANK=false` turns it off, `DEV_RAG_RERANK_MIN` is the threshold, default 0.03). About 4 s per search on CPU, so a run takes 1.5 to 2.5 minutes on a laptop.
+- Citation support check: a cause is kept only if one of its cited passages comes back when its own name is searched (`supported_causes` in `agent2.py`, `supportFilter` in `n8n/code_nodes/agent2_postprocess.js`; `AGENT2_SUPPORT_CHECK=false` / `SUPPORT_CHECK=false` skip it). Limit: it sees the cause name, not the symptom (see `REQUIREMENTS_CHECK.md`).
+- Ollama build: an agent error (a 7B loop on empty search results) counts as no answer, so the case ends as `insufficient`.
