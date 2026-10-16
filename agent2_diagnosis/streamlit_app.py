@@ -116,7 +116,7 @@ def show_result(res: dict, round_: int):
 with st.sidebar:
     st.header("Réglages")
     url = st.text_input("Webhook Agent 2 (n8n)", DEFAULT_URL)
-    timeout = st.slider("Délai max (secondes)", 30, 240, 120)
+    timeout = st.slider("Délai max (secondes)", 30, 400, 300)
     st.caption("Un appel dure environ 40 secondes et consomme 3 à 4 requêtes Gemini (quota gratuit limité).")
     st.divider()
     st.caption("Cas d'exemple")
