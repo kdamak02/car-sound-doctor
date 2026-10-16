@@ -121,7 +121,7 @@ def rag_search(query: str, vehicle: dict, top_k: int = 5) -> dict:
     filters = {k: vehicle[k] for k in ("make", "model", "year") if vehicle.get(k)}
     body = json.dumps({"query": query, "filters": {**filters, "section": SECTIONS}, "top_k": top_k, "rerank": True}).encode()
     req = request.Request(RAG_URL.rstrip("/") + "/search", data=body, headers={"Content-Type": "application/json"})
-    with request.urlopen(req, timeout=30) as r:
+    with request.urlopen(req, timeout=120) as r:  # reranked searches take several seconds on CPU
         return json.loads(r.read())
 
 
@@ -219,15 +219,16 @@ def readable(name: str, label, lang: str) -> str:
 
 
 def supported_causes(raw, by_id: dict, case: dict, search, top: int = 3) -> list:
-    """A citation that exists is not a citation that supports. For the `top` likeliest causes, search the cause's own name:
+    """A citation that exists is not a citation that supports. For the `top` likeliest causes, search the cause's own name plus the symptom:
     the service reranks and drops weak passages, so the cause stays only if one of the passages it cites comes back.
     ponytail: one extra search per cause (cheap with a GPU reranker); upgrade = score each (cause, cited chunk) pair directly."""
     ranked = sorted(raw or [], key=lambda c: -(c.get("prob") or 0) if isinstance(c.get("prob"), (int, float)) else 0)
+    hint = (case.get("symptom") or {}).get("description", "")  # a bare cause name ("Alternateur") only matches code tables
     keep = []
     for n, c in enumerate(ranked):
         ids = {i for i in (clean_id(x) for x in c.get("sources") or []) if i in by_id}
         if n < top and ids and c.get("name"):
-            back = {p["chunk_id"] for p in search(str(c["name"]), case.get("vehicle") or {}, 8)["passages"]}
+            back = {p["chunk_id"] for p in search(f'{c["name"]} {hint}'.strip(), case.get("vehicle") or {}, 8)["passages"]}
             if not ids & back:
                 continue  # cited passages do not talk about this cause
         keep.append(c)

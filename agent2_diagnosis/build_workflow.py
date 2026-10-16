@@ -83,7 +83,7 @@ POSTPROCESS = (f"const SUPPORT = {SUPPORT};\nconst LABELS = {json.dumps(LABELS, 
                "const search = (query, filters, top_k) => this.helpers.httpRequest({\n"
                f"  method: 'POST', url: {json.dumps(RAG_URL)}, body: {{ query, filters, top_k, rerank: true }}, json: true }});\n"
                f"const answer = {AGENT_OUT};\n"
-               "const checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3) : answer;\n"
+               "const checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3, ($('Prepare input').first().json.queries || [''])[0]) : answer;\n"
                "return { json: postprocess(ctx, checked, LABELS) };\n")
 RESCUE_ON = LLM == "ollama" and MODE == "tool" and os.getenv("RESCUE", "true").lower() == "true"
 RESCUE = src("agent2_rescue.js") + f"\nreturn {{ json: rescue($('Prepare input').first().json, $('Agent 2').first().json.intermediateSteps, {MAX_PASSAGES}) }};\n"

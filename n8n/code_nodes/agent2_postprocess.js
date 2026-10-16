@@ -113,7 +113,7 @@ function postprocess(ctx, agentOut, LABELS) {
 // A citation that exists is not a citation that supports: for the `top` likeliest causes, search the cause's own name
 // (the service reranks and drops weak passages) and keep the cause only if one of its cited passages comes back.
 // Port of supported_causes() in agent2_diagnosis/agent2.py. Returns agentOut with `output` replaced by the filtered answer.
-async function supportFilter(agentOut, search, filters, top) {
+async function supportFilter(agentOut, search, filters, top, hint) {
   const cleanId = (x) => String(x == null ? '' : x).replace(/^[\s\[('"]+|[\s\])'",.;]+$/g, '');
   const have = new Set();
   for (const step of agentOut.intermediateSteps || []) {
@@ -135,7 +135,7 @@ async function supportFilter(agentOut, search, filters, top) {
     const c = ranked[n];
     const ids = (c.sources || []).map(cleanId).filter((i) => have.has(i));
     if (n < (top || 3) && ids.length && c.name) {
-      const res = await search(String(c.name), filters, 8);
+      const res = await search((String(c.name) + ' ' + (hint || '')).trim(), filters, 8); // a bare cause name only matches code tables
       const back = new Set((res.passages || []).map((p) => p.chunk_id));
       if (!ids.some((i) => back.has(i))) continue; // cited passages do not talk about this cause
     }
