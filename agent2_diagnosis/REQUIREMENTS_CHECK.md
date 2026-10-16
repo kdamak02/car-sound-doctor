@@ -51,8 +51,8 @@ The brief also says: *justification matters more than complexity* and *reporting
 | `agent2_diagnosis/README.md`: sections `symptoms, causes, codes` | DEVIATION proposed: add `maintenance` (+7.7 points of hit rate); not applied, needs the team's decision |
 
 ## E. Known weaknesses (say them, do not hide them)
-1. **A citation that exists is not a citation that supports.** On a question the manuals do not cover (belt squeal) the 7B model cites an unrelated passage and the guardrail accepts it. Fix planned: reranker / cross-encoder support check.
-2. **No-answer is not rejected by retrieval**: 1 of 4 queries; scores overlap (answers 0.49-0.80, on-topic no-answer 0.57-0.62).
+1. **A citation that exists is not a citation that supports.** On a question the manuals do not cover (belt squeal) the 7B model cites an unrelated passage and the guardrail accepts it. Partly fixed: a support check (bge-reranker-v2-m3, `supported_causes` / `supportFilter`) drops a cause whose cited passages do not come back when its own name is searched. Belt squeal no longer cites the starter table but still keeps "belt slippage" through OBDex belt-driven starter/generator codes: the check works on the cause name, not the symptom. Real fix = a belt-squeal passage in the corpus.
+2. **No-answer is not rejected by retrieval**: 1 of 4 with the dense score alone (3 of 4 with the reranker at threshold 0.03, for a hit rate of 0.808 against 0.846; see `tests/eval_results.md`); dense scores overlap (answers 0.49-0.80, on-topic no-answer 0.57-0.62).
 3. **Answer quality of the local 7B model** is limited (duplicate labels, checks that need tools, sometimes English). Gemini Flash is stronger but the free tier gives about 5 runs a day; billing was refused.
 4. The evaluation set is small (30), written from the same manuals by the team, and labelled by one reader.
-5. The vector store and the reranker of the architecture (Qdrant, bge-reranker) are not built.
+5. The vector store and the production reranker of the architecture (Qdrant, bge-reranker) are not built: the dev RAG runs bge-reranker-v2-m3 on CPU (about 4 s per search).

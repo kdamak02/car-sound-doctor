@@ -77,9 +77,14 @@ else:                   # AI Agent node: tool results are in intermediateSteps
 if os.getenv("LLM", "gemini") == "ollama" and os.getenv("MODE", "tool") == "tool" and os.getenv("RESCUE", "true").lower() == "true":
     # the answer comes either from the agent (`output`) or from the rescue chain (`text`); the passages are always the agent's
     AGENT_OUT = "{ output: $json.output !== undefined ? $json.output : $json.text, intermediateSteps: $('Agent 2').first().json.intermediateSteps }"
-POSTPROCESS = (f"const LABELS = {json.dumps(LABELS, ensure_ascii=False)};\n\n" + src("agent2_postprocess.js") +
+SUPPORT = os.getenv("SUPPORT_CHECK", "true").lower()  # citation support check through the reranker; SUPPORT_CHECK=false skips it
+POSTPROCESS = (f"const SUPPORT = {SUPPORT};\nconst LABELS = {json.dumps(LABELS, ensure_ascii=False)};\n\n" + src("agent2_postprocess.js") +
                "\nconst ctx = $('Prepare input').first().json.ctx;\n"
-               f"return {{ json: postprocess(ctx, {AGENT_OUT}, LABELS) }};\n")
+               "const search = (query, filters, top_k) => this.helpers.httpRequest({\n"
+               f"  method: 'POST', url: {json.dumps(RAG_URL)}, body: {{ query, filters, top_k, rerank: true }}, json: true }});\n"
+               f"const answer = {AGENT_OUT};\n"
+               "const checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3) : answer;\n"
+               "return { json: postprocess(ctx, checked, LABELS) };\n")
 RESCUE_ON = LLM == "ollama" and MODE == "tool" and os.getenv("RESCUE", "true").lower() == "true"
 RESCUE = src("agent2_rescue.js") + f"\nreturn {{ json: rescue($('Prepare input').first().json, $('Agent 2').first().json.intermediateSteps, {MAX_PASSAGES}) }};\n"
 GUARDRAILS = src("validate_output.js")  # the team's node, unchanged

@@ -108,3 +108,38 @@ function postprocess(ctx, agentOut, LABELS) {
   };
   return { agent: 'agent2_output', output, retrieved, insufficient: false, reason: null, fallback_level: level };
 }
+
+// supportFilter(agentOut, search, filters, top)  [async, run just before postprocess]
+// A citation that exists is not a citation that supports: for the `top` likeliest causes, search the cause's own name
+// (the service reranks and drops weak passages) and keep the cause only if one of its cited passages comes back.
+// Port of supported_causes() in agent2_diagnosis/agent2.py. Returns agentOut with `output` replaced by the filtered answer.
+async function supportFilter(agentOut, search, filters, top) {
+  const cleanId = (x) => String(x == null ? '' : x).replace(/^[\s\[('"]+|[\s\])'",.;]+$/g, '');
+  const have = new Set();
+  for (const step of agentOut.intermediateSteps || []) {
+    let obs = step.observation;
+    if (typeof obs === 'string') {
+      try { obs = JSON.parse(obs); } catch (e) { continue; }
+    }
+    for (const p of (obs && obs.passages) || []) have.add(p.chunk_id);
+  }
+  let raw = agentOut.output;
+  if (typeof raw === 'string') {
+    const m = raw.match(/\{[\s\S]*\}/);
+    try { raw = m ? JSON.parse(m[0]) : null; } catch (e) { raw = null; }
+  }
+  if (!raw || !Array.isArray(raw.causes)) return agentOut;
+  const ranked = [...raw.causes].sort((a, b) => (Number(b.prob) || 0) - (Number(a.prob) || 0));
+  const keep = [];
+  for (let n = 0; n < ranked.length; n++) {
+    const c = ranked[n];
+    const ids = (c.sources || []).map(cleanId).filter((i) => have.has(i));
+    if (n < (top || 3) && ids.length && c.name) {
+      const res = await search(String(c.name), filters, 8);
+      const back = new Set((res.passages || []).map((p) => p.chunk_id));
+      if (!ids.some((i) => back.has(i))) continue; // cited passages do not talk about this cause
+    }
+    keep.push(c);
+  }
+  return { ...agentOut, output: { ...raw, causes: keep } };
+}

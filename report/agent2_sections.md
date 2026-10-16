@@ -58,7 +58,7 @@ Labels were made by reading the manuals (not with the retriever); a hit is a pas
 | **B by heading** | **hybrid** | **+ maintenance** | **0.87** | **0.73** | **0.92** |
 
 Findings: heading chunks beat fixed windows; adding BM25 (reciprocal rank fusion) beats dense alone; the section filter planned in the README loses 4 points of hit rate, adding `maintenance` gains 4 more than no filter at all;
-**no-answer queries are not separated by the score** (3 of 4 still return passages with scores 0.57-0.62 against 0.49-0.80 for real answers): a reranker is needed. Not done: reranker row, the real vector store (Qdrant, B1), row-level chunking of the cause tables.
+**no-answer queries are not separated by the score** (3 of 4 still return passages with scores 0.57-0.62 against 0.49-0.80 for real answers): a reranker is needed. With bge-reranker-v2-m3 as a filter (threshold 0.03) 3 of 4 are rejected and hit rate goes 0.846 -> 0.808 (threshold 0.10: 4 of 4, 0.692): a recall/rejection trade-off measured on 30 queries. Not done: the real vector store (Qdrant, B1), row-level chunking of the cause tables.
 Limits: 30 queries, one labeller, queries share the vocabulary of the manuals, results are optimistic.
 
 ## 6 bis / 8. What did not work (and why it is in the report)
@@ -67,7 +67,7 @@ Limits: 30 queries, one labeller, queries share the vocabulary of the manuals, r
 3. Free-text prompt rule for contradicting answers: 3/8 (from 1/8). A status field + code cap: 7/8.
 4. Fixed-size chunks: they cut the troubleshooting tables.
 5. Retrieval score as a "no answer" detector: the scores overlap.
-6. Citation guardrail that checks existence only: on a question the manuals do not cover, the model cites an unrelated passage (belt squeal -> starter table). Open; planned fix: reranker as a support check.
+6. Citation guardrail that checks existence only: on a question the manuals do not cover, the model cites an unrelated passage (belt squeal -> starter table). Partly fixed: a support check with the reranker drops causes whose citations do not come back when the cause is searched; belt squeal still survives through OBDex belt-driven generator codes (the check sees the cause name, not the symptom). Needs a belt-squeal passage in the corpus.
 7. Gemini free tier: 20 requests per model per day, shared by the Flash models; a development day exhausted it.
 
 ## Annex A — prompt library

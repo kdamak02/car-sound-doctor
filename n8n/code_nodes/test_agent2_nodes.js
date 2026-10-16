@@ -17,6 +17,7 @@ const prepare = load('n8n/code_nodes/agent2_prepare.js', 'prepare');
 const postprocess = load('n8n/code_nodes/agent2_postprocess.js', 'postprocess');
 // retrieve() is async: no JSON round trip here (a Promise cannot be serialised); its result is round-tripped where compared
 const rescueFn = vm.runInNewContext(read('n8n/code_nodes/agent2_rescue.js') + '\n;rescue', {});
+const supportFn = vm.runInNewContext(read('n8n/code_nodes/agent2_postprocess.js') + '\n;supportFilter', {});
 const retrieveFn = vm.runInNewContext(read('n8n/code_nodes/agent2_retrieve.js') + '\n;retrieve', {});
 
 const promptText = (stem) => {
@@ -192,5 +193,10 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
   assert(!rs.full_prompt.includes('Use the rag_search tool'));
   assert(rs.full_prompt.endsWith('Answer now with the JSON object only.'));
   assert(rescueFn(rp, [], 6).full_prompt.includes('(none found)'));
+  // support check: a cause stays only if one of its cited passages comes back when its own name is searched
+  const ans = { output: JSON.stringify({ causes: [{ name: 'belt', prob: 0.7, sources: ['a'] }, { name: 'battery', prob: 0.3, sources: ['b'] }] }),
+    intermediateSteps: [{ observation: { passages: [{ chunk_id: 'a' }, { chunk_id: 'b' }] } }] };
+  const sup = await supportFn(ans, async (q) => ({ passages: q === 'battery' ? [{ chunk_id: 'b' }] : [] }), {}, 3);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(sup.output.causes.map((c) => c.name))), ['battery']);
   console.log('agent2 n8n nodes: all tests passed');
 })();
