@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NS = uuid.UUID("a2a2a2a2-0000-4000-8000-000000000002")
 
-LLM = os.getenv("LLM", "gemini")  # gemini (team default) | ollama (local, no quota)
+LLM = os.getenv("LLM", "gemini")  # gemini (team default) | ollama (local, no quota) | groq (shared team key)
 MODE = os.getenv("MODE", "tool")
 RAG_URL = os.getenv("RAG_URL", "http://rag-service:8002/search")  # docker compose service name
 TOP_K = int(os.getenv("RAG_TOP_K", "3" if LLM == "ollama" else "5"))  # a small local model has a short context window
@@ -125,6 +125,10 @@ if LLM == "ollama":
         options["format"] = "json"  # Ollama JSON mode: the answer is always a valid JSON object
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatOllama", 1,
                     {"model": os.getenv("OLLAMA_MODEL", "qwen2.5:7b"), "options": options}, [440, 340])
+elif LLM == "groq":
+    LLM_NAME = "Groq Chat Model"  # credential "Groq account": Groq API key (same key as Agent 3)
+    LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGroq", 1,
+                    {"model": os.getenv("GROQ_MODEL_A2", "openai/gpt-oss-120b"), "options": {"temperature": 0.2}}, [440, 340])
 else:
     LLM_NAME = "Gemini Chat Model"
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGoogleGemini", 1,
