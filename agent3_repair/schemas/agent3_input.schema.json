@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://car-sound-doctor.local/schemas/agent3-input.schema.json",
+  "title": "Agent 3 — Input Case Record",
+  "description": "Input contract for the case record sent from Agent 2 to Agent 3 (Repair Guide Agent). See AGENT_3_IMPLEMENTATION.md §4.",
+  "type": "object",
+  "required": ["case_id"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "case_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Non-empty unique identifier for the diagnostic case."
+    },
+
+    "language": {
+      "type": "string",
+      "enum": ["fr", "en"],
+      "default": "fr",
+      "description": "User-facing language for the repair guide."
+    },
+
+    "vehicle": {
+      "type": "object",
+      "required": ["make", "model", "year"],
+      "additionalProperties": false,
+      "properties": {
+        "make":  { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "year":  { "type": "integer", "minimum": 1886 },
+        "engine": {
+          "type": ["string", "null"],
+          "description": "Engine variant, if known. Null when not provided."
+        }
+      }
+    },
+
+    "audio": {
+      "type": "object",
+      "required": ["class", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "class": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Sound classification label produced by Agent 1."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Model confidence score (0-1). Do not treat as proof."
+        }
+      }
+    },
+
+    "diagnosis": {
+      "type": "object",
+      "required": ["status", "causes"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["probable", "confirmed", "inconclusive"],
+          "description": "Overall diagnostic confidence from Agent 2."
+        },
+        "causes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "prob", "evidence"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Fault hypothesis name."
+              },
+              "prob": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Estimated probability (0-1)."
+              },
+              "evidence": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Supporting evidence statements."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question", "answer"],
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Physical check question posed to the user."
+          },
+          "answer": {
+            "type": "string",
+            "description": "User's answer. May be empty, 'Not checked', etc."
+          }
+        }
+      },
+      "description": "Physical verification checks and user answers. May be empty."
+    }
+  }
+}
+

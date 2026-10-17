@@ -1,0 +1,1332 @@
+[
+  {
+    "case_id": "TC-01",
+    "name": "exact_compatible_procedure",
+    "description": "Belt squeal on Chevrolet Cruze with exact GM TSB 19-NA-037 procedure retrieved. Should produce guide_available with cited steps.",
+    "case_record": {
+      "case_id": "case_tc01",
+      "language": "en",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017,
+        "engine": "1.4L Turbo"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.89
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Accessory drive belt slipping or glazed",
+            "prob": 0.85,
+            "evidence": [
+              "High-frequency squeal matching alternator load"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Does squeal occur upon engine start and AC activation?",
+          "answer": "Yes"
+        },
+        {
+          "question": "Are visible cracks or glazing present on belt ribs?",
+          "answer": "Glazing observed"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_gm_19-NA-037",
+        "document_title": "GM Bulletin 19-NA-037: Front End Accessory Drive Belt Squeal",
+        "page": 2,
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year_min": 2016,
+        "year_max": 2019,
+        "system": "engine_accessories",
+        "section": "procedure",
+        "language": "en",
+        "text": "1. Turn ignition OFF and allow engine to cool completely. 2. Install a 3/8-inch breaker bar into the square drive on the belt tensioner. 3. Rotate tensioner clockwise to relieve belt tension and remove belt from alternator pulley. 4. Release tensioner gently and remove drive belt. 5. Route new GM drive belt around crank and AC compressor, rotate tensioner, and seat belt on alternator pulley."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc01",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017
+      },
+      "fault": {
+        "name": "Accessory drive belt slipping or glazed",
+        "certainty": "probable",
+        "evidence_summary": "High-pitch squeal confirmed by physical check observing glazed ribs and supported by GM TSB 19-NA-037."
+      },
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [
+          "3/8-inch breaker bar",
+          "Work gloves"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Turn ignition OFF and ensure engine is completely cool before starting work.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": "Never touch belts or pulleys when the engine is warm or ignition is ON."
+          },
+          {
+            "number": 2,
+            "action": "Insert 3/8-inch breaker bar into tensioner square drive, rotate clockwise to release tension, and remove belt from alternator pulley.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": "Keep fingers away from pulley pinch zones while tensioner is under spring load."
+          },
+          {
+            "number": 3,
+            "action": "Remove old belt, route new drive belt around crankshaft and AC compressor, rotate tensioner, and slip over alternator pulley.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": null
+          }
+        ]
+      },
+      "safety_warnings": [
+        "Ensure the ignition key is removed so the engine cannot inadvertently turn over.",
+        "Ensure the new belt is properly centered in all pulley grooves before releasing tension."
+      ],
+      "limitations": [
+        "If belt tensioner exhibits excessive flutter after replacement, the tensioner assembly may also require replacement."
+      ],
+      "recommendation": "Start engine after replacement and inspect belt tracking. If noise persists, inspect alternator decoupler pulley."
+    },
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-02",
+    "name": "symptom_only_retrieval",
+    "description": "Cold start rough idle where retrieved passage only describes symptoms and fault description without procedure. Must return insufficient_information.",
+    "case_record": {
+      "case_id": "case_tc02",
+      "language": "en",
+      "vehicle": {
+        "make": "Ford",
+        "model": "F-150",
+        "year": 2019,
+        "engine": "2.7L EcoBoost"
+      },
+      "audio": {
+        "class": "misfire_rough_idle",
+        "confidence": 0.81
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Intake valve carbon accumulation",
+            "prob": 0.76,
+            "evidence": [
+              "Cold start shaking and uneven idle tone"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Does shaking stop after warm-up?",
+          "answer": "Yes"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_ford_19-2384",
+        "document_title": "Ford TSB 19-2384: Cold Start Rough Idle",
+        "page": 1,
+        "make": "Ford",
+        "model": "F-150",
+        "year_min": 2018,
+        "year_max": 2020,
+        "system": "fuel_induction",
+        "section": "symptoms",
+        "language": "en",
+        "text": "Some 2018-2020 F-150 vehicles equipped with a 2.7L EcoBoost engine may exhibit a rough idle on cold start with or without DTCs P0300-P0306. Carbon accumulation on intake valve stems can impede airflow during cold open-loop operation."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc02",
+      "status": "insufficient_information",
+      "vehicle": {
+        "make": "Ford",
+        "model": "F-150",
+        "year": 2019
+      },
+      "fault": {
+        "name": "Intake valve carbon accumulation",
+        "certainty": "suspected",
+        "evidence_summary": "TSB 19-2384 corroborates cold start rough idle symptom, but procedural cleaning steps are not present in the retrieved bulletin."
+      },
+      "repair_guide": {
+        "difficulty": "advanced",
+        "tools": [],
+        "steps": []
+      },
+      "safety_warnings": [
+        "Unburned fuel from repeated cold misfires can degrade motor oil and cause catalyst overheating."
+      ],
+      "limitations": [
+        "No workshop procedure or approved cleaning method was retrieved in the technical manual database for this vehicle."
+      ],
+      "recommendation": "Consult an authorized Ford service center for specialized intake valve inspection and walnut-shell or chemical cleaning."
+    },
+    "expected_status": "insufficient_information",
+    "expected_steps_count": 0,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-03",
+    "name": "wrong_vehicle_manual",
+    "description": "Peugeot 208 case where retrieval only yielded a Chevrolet Cruze TSB. System must not offer a vehicle-specific guide from an incompatible make.",
+    "case_record": {
+      "case_id": "case_tc03",
+      "language": "fr",
+      "vehicle": {
+        "make": "Peugeot",
+        "model": "208",
+        "year": 2018,
+        "engine": "1.2 PureTech"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.85
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Courroie d'accessoires détendue",
+            "prob": 0.79,
+            "evidence": [
+              "Bruit de crissement au ralenti"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Le crissement augmente-t-il avec la climatisation ?",
+          "answer": "Oui"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_gm_19-NA-037",
+        "document_title": "GM Bulletin 19-NA-037: Front End Accessory Drive Belt Squeal",
+        "page": 2,
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year_min": 2016,
+        "year_max": 2019,
+        "system": "engine_accessories",
+        "section": "procedure",
+        "language": "en",
+        "text": "1. Relieve tension using a 3/8-inch breaker bar on GM Ecotec tensioner. Remove belt."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc03",
+      "status": "insufficient_information",
+      "vehicle": {
+        "make": "Peugeot",
+        "model": "208",
+        "year": 2018
+      },
+      "fault": {
+        "name": "Courroie d'accessoires détendue ou usée",
+        "certainty": "suspected",
+        "evidence_summary": "Sifflement audio caractéristique, mais la seule procédure disponible dans la base concerne un véhicule Chevrolet Cruze incompatible."
+      },
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [],
+        "steps": []
+      },
+      "safety_warnings": [
+        "Ne jamais appliquer la procédure technique d'une autre marque sur une motorisation PureTech Peugeot."
+      ],
+      "limitations": [
+        "Aucune documentation d'atelier spécifique Peugeot 208 disponible pour cette opération."
+      ],
+      "recommendation": "Consulter la documentation officielle Peugeot ou faire appel à un réparateur agréé."
+    },
+    "expected_status": "insufficient_information",
+    "expected_steps_count": 0,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-04",
+    "name": "missing_vehicle_metadata",
+    "description": "Case record missing car make and model. Deterministic safety rule must enforce insufficient_information.",
+    "case_record": {
+      "case_id": "case_tc04",
+      "language": "en",
+      "vehicle": {
+        "make": "",
+        "model": "",
+        "year": 2020,
+        "engine": null
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.8
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Worn belt",
+            "prob": 0.7,
+            "evidence": [
+              "Squeal noise"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "generic_belt_doc",
+        "document_title": "Generic Belt Inspection Guide",
+        "page": 12,
+        "make": "Generic",
+        "model": "All",
+        "year_min": 2000,
+        "year_max": 2025,
+        "system": "engine",
+        "section": "procedure",
+        "language": "en",
+        "text": "Loosen tensioner and replace belt."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc04",
+      "status": "insufficient_information",
+      "vehicle": {
+        "make": "Unknown",
+        "model": "Unknown",
+        "year": 2020
+      },
+      "fault": {
+        "name": "Possible belt wear",
+        "certainty": "unconfirmed",
+        "evidence_summary": "Vehicle make and model are missing. A vehicle-specific repair guide cannot be safely produced."
+      },
+      "repair_guide": {
+        "difficulty": "basic",
+        "tools": [],
+        "steps": []
+      },
+      "safety_warnings": [
+        "Vehicle specifications and engine architecture vary substantially across models."
+      ],
+      "limitations": [
+        "Vehicle identification details (make, model, engine) are required."
+      ],
+      "recommendation": "Please provide your vehicle's make, model, and year to locate the appropriate technical service manual."
+    },
+    "expected_status": "insufficient_information",
+    "expected_steps_count": 0,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-05",
+    "name": "contradictory_checks",
+    "description": "Audio detects belt squeal, but user check reports belt looks pristine and noise only occurs during hard steering. Guide must preserve diagnostic uncertainty.",
+    "case_record": {
+      "case_id": "case_tc05",
+      "language": "en",
+      "vehicle": {
+        "make": "Honda",
+        "model": "CR-V",
+        "year": 2014,
+        "engine": "2.4L"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.75
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Power steering pump belt slipping under steering lock",
+            "prob": 0.65,
+            "evidence": [
+              "Squeal on full wheel lock"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Is belt condition cracked or loose?",
+          "answer": "Belt looks completely brand new"
+        },
+        {
+          "question": "Does squeal occur at idle?",
+          "answer": "No, only when steering wheel is turned all the way"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "ifixit_guide_7679",
+        "document_title": "Car Maintenance Tips: Power Steering Fluid",
+        "page": 10,
+        "make": "Generic",
+        "model": "Car and Truck",
+        "year_min": 2000,
+        "year_max": 2024,
+        "system": "steering",
+        "section": "procedure",
+        "language": "en",
+        "text": "Locate the power steering reservoir near the front right corner of the engine bay. If the fluid level is below the Lower Level fill line, remove the cap and refill with approved power steering fluid up to Upper Level."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc05",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Honda",
+        "model": "CR-V",
+        "year": 2014
+      },
+      "fault": {
+        "name": "Power steering pump strain or low fluid cavitation",
+        "certainty": "suspected",
+        "evidence_summary": "User physical check confirms belt is in new condition, ruling out primary belt decay. Squeal occurring exclusively on full steering lock points to hydraulic pump strain or low fluid."
+      },
+      "repair_guide": {
+        "difficulty": "basic",
+        "tools": [
+          "Clean cloth",
+          "Flashlight"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "With engine off, locate the power steering fluid reservoir in the engine bay and inspect the cold fluid level against the indicator marks.",
+            "source_id": "ifixit_guide_7679",
+            "page": 10,
+            "warning": "Ensure engine is stopped before opening fluid reservoirs."
+          },
+          {
+            "number": 2,
+            "action": "If fluid is below the Lower Level mark, top up with manufacturer-approved fluid to the Upper Level line and re-seat cap securely.",
+            "source_id": "ifixit_guide_7679",
+            "page": 10,
+            "warning": "Do not overfill beyond the maximum fill line."
+          }
+        ]
+      },
+      "safety_warnings": [
+        "Avoid holding steering wheel at full lock for more than 5 seconds as this stresses the pump relief valve."
+      ],
+      "limitations": [
+        "The underlying issue could involve internal pump cavitation or pressure valve wear if topping off fluid does not eliminate the noise."
+      ],
+      "recommendation": "If squeal persists with correct fluid level, have the steering rack and pump pressure evaluated by a technician."
+    },
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-06",
+    "name": "critical_brake_issue",
+    "description": "Brake grinding sound indicating dangerous metal-on-metal pad wear. Deterministic safety rule must enforce professional_assistance_required and empty steps.",
+    "case_record": {
+      "case_id": "case_tc06",
+      "language": "en",
+      "vehicle": {
+        "make": "Toyota",
+        "model": "Camry",
+        "year": 2016,
+        "engine": "2.5L"
+      },
+      "audio": {
+        "class": "grinding",
+        "confidence": 0.94
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Complete brake pad friction material depletion (metal on rotor)",
+            "prob": 0.95,
+            "evidence": [
+              "Heavy metallic grinding directly synchronized with brake pedal application"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Does grinding occur when stepping on the brake pedal?",
+          "answer": "Yes, loud metal grinding and shaking"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "brake_manual_01",
+        "document_title": "Brake Service Manual",
+        "page": 55,
+        "make": "Toyota",
+        "model": "Camry",
+        "year_min": 2015,
+        "year_max": 2018,
+        "system": "brakes",
+        "section": "procedure",
+        "language": "en",
+        "text": "Remove caliper slide pins, discard worn brake pads, check rotor thickness with micrometer, install new ceramic pads, torque caliper bolts to 34 Nm."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc06",
+      "status": "professional_assistance_required",
+      "vehicle": {
+        "make": "Toyota",
+        "model": "Camry",
+        "year": 2016
+      },
+      "fault": {
+        "name": "Severe brake pad friction depletion (metal-to-metal contact)",
+        "certainty": "confirmed_by_evidence",
+        "evidence_summary": "Grinding audio matched to pedal application indicates friction pads are worn to backing plates, actively scoring the brake rotors."
+      },
+      "repair_guide": {
+        "difficulty": "professional_only",
+        "tools": [],
+        "steps": []
+      },
+      "safety_warnings": [
+        "CRITICAL SAFETY WARNING: DO NOT DRIVE THIS VEHICLE.",
+        "Metal-on-metal brake contact drastically lengthens stopping distances, creates excessive heat that can boil brake fluid, and risks complete catastrophic brake failure."
+      ],
+      "limitations": [
+        "Brake rotor scoring and caliper piston over-extension require professional shop equipment, rotor thickness measurement, and possible hydraulic bleed."
+      ],
+      "recommendation": "Have the vehicle safely towed to a licensed automotive repair facility immediately for front and rear brake system overhaul."
+    },
+    "expected_status": "professional_assistance_required",
+    "expected_steps_count": 0,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-07",
+    "name": "critical_overheating",
+    "description": "High temperature boiling noise / overheating symptom. Must enforce professional escalation and safe cool-down precautions.",
+    "case_record": {
+      "case_id": "case_tc07",
+      "language": "fr",
+      "vehicle": {
+        "make": "Citroën",
+        "model": "C4",
+        "year": 2021,
+        "engine": "1.2 PureTech"
+      },
+      "audio": {
+        "class": "knock",
+        "confidence": 0.82
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Surchauffe moteur sévère et ébullition liquide de refroidissement",
+            "prob": 0.9,
+            "evidence": [
+              "Voyant rouge température allumé, bruit de bouillonnement sous le capot"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Le voyant de température est-il allumé ?",
+          "answer": "Oui, rouge fixe"
+        },
+        {
+          "question": "Y a-t-il de la vapeur ou une odeur de liquide ?",
+          "answer": "Vapeur visible"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "citroen_c4_notice",
+        "document_title": "Notice d'emploi Citroën C4",
+        "page": 178,
+        "make": "Citroën",
+        "model": "C4",
+        "year_min": 2020,
+        "year_max": 2023,
+        "system": "cooling",
+        "section": "procedure",
+        "language": "fr",
+        "text": "En cas d'alerte surchauffe moteur : s'arrêter impérativement dans des conditions optimales de sécurité et couper le moteur. Attendre au minimum 30 minutes avant toute intervention. Ne jamais ouvrir le bouchon de liquide de refroidissement tant que le moteur est chaud."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc07",
+      "status": "professional_assistance_required",
+      "vehicle": {
+        "make": "Citroën",
+        "model": "C4",
+        "year": 2021
+      },
+      "fault": {
+        "name": "Surchauffe moteur critique avec risque d'endommagement du joint de culasse",
+        "certainty": "probable",
+        "evidence_summary": "Voyant rouge fixe de surchauffe moteur et présence de vapeur indiquant une rupture de pression ou une perte de liquide de refroidissement."
+      },
+      "repair_guide": {
+        "difficulty": "professional_only",
+        "tools": [],
+        "steps": []
+      },
+      "safety_warnings": [
+        "DANGER BRÛLURE GRAVE : N'ouvrez JAMAIS le bouchon du vase d'expansion ou du radiateur lorsque le moteur est chaud. Le circuit est sous forte pression.",
+        "ARRÊT IMMÉDIAT : Ne continuez pas à rouler. Une surchauffe prolongée entraîne le grippage des pistons ou la déformation de la culasse."
+      ],
+      "limitations": [
+        "Une fuite sous pression ou un thermostat bloqué nécessite une mise sous épreuve du circuit par un garagiste qualifié."
+      ],
+      "recommendation": "Couper le contact, laisser refroidir complètement le moteur et contacter votre service d'assistance ou un dépanneur pour acheminement au garage."
+    },
+    "expected_status": "professional_assistance_required",
+    "expected_steps_count": 0,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-08",
+    "name": "french_case_english_manual",
+    "description": "User case in French, retrieved manual is English GM TSB. Guide must respond in French with valid citations and English source titles intact.",
+    "case_record": {
+      "case_id": "case_tc08",
+      "language": "fr",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017,
+        "engine": "1.4L"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.87
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Courroie d'accessoires détendue",
+            "prob": 0.82,
+            "evidence": [
+              "Sifflement proportionnel au régime"
+            ]
+          }
+        ]
+      },
+      "checks": [
+        {
+          "question": "Le sifflement s'arrête-t-il après pulvérisation d'eau ?",
+          "answer": "Oui brièvement"
+        }
+      ]
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_gm_19-NA-037",
+        "document_title": "GM Bulletin 19-NA-037: Front End Accessory Drive Belt Squeal",
+        "page": 2,
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year_min": 2016,
+        "year_max": 2019,
+        "system": "engine_accessories",
+        "section": "procedure",
+        "language": "en",
+        "text": "Rotate tensioner clockwise using a 3/8-inch breaker bar, remove belt from alternator pulley, and install replacement drive belt."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc08",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017
+      },
+      "fault": {
+        "name": "Glissement de la courroie d'accessoires",
+        "certainty": "probable",
+        "evidence_summary": "Sifflement audio temporairement neutralisé par l'eau, confirmant le glissement superficiel selon le bulletin GM 19-NA-037."
+      },
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [
+          "Clé à cliquet ou barre de force 3/8 pouce",
+          "Gants de travail"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Vérifier que le moteur est coupé et froid, puis insérer une barre de force 3/8 de pouce dans l'empreinte carrée du galet tendeur.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": "Garder les mains éloignées de la zone de pincement des poulies."
+          },
+          {
+            "number": 2,
+            "action": "Tourner le galet dans le sens des aiguilles d'une montre pour détendre la courroie et la dégager de la poulie d'alternateur.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": null
+          },
+          {
+            "number": 3,
+            "action": "Retirer l'ancienne courroie et monter la nouvelle courroie GM selon le schéma de passage d'origine.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 2,
+            "warning": null
+          }
+        ]
+      },
+      "safety_warnings": [
+        "Couper impérativement le contact et retirer la clé avant toute intervention mécanique."
+      ],
+      "limitations": [
+        "Vérifier le libre jeu de la poulie débrayable d'alternateur avant repose complète."
+      ],
+      "recommendation": "Démarrer le moteur après pose pour vérifier le bon alignement des stries sur chaque gorge."
+    },
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-09",
+    "name": "fabricated_source_rejection",
+    "description": "Adversarial test: mock LLM guide cites a fabricated source_id ('manual_hallucinated_99') not present in retrieved sources. Citation validator must reject.",
+    "case_record": {
+      "case_id": "case_tc09",
+      "language": "en",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017,
+        "engine": "1.4L"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.85
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Belt wear",
+            "prob": 0.8,
+            "evidence": [
+              "Noise"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_gm_19-NA-037",
+        "document_title": "GM Bulletin 19-NA-037",
+        "page": 2,
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year_min": 2016,
+        "year_max": 2019,
+        "system": "engine",
+        "section": "procedure",
+        "language": "en",
+        "text": "Rotate tensioner and replace belt."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc09",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017
+      },
+      "fault": {
+        "name": "Belt wear",
+        "certainty": "probable",
+        "evidence_summary": "Squeal sound."
+      },
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [
+          "Wrench"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Loosen tensioner.",
+            "source_id": "manual_hallucinated_99",
+            "page": 45,
+            "warning": null
+          }
+        ]
+      },
+      "safety_warnings": [
+        "Be careful."
+      ],
+      "limitations": [],
+      "recommendation": "Consult mechanic if needed."
+    },
+    "expected_status": "guide_available",
+    "should_pass_validation": false,
+    "expected_validation_error": "not in the retrieved sources"
+  },
+  {
+    "case_id": "TC-10",
+    "name": "fabricated_page_rejection",
+    "description": "Adversarial test: mock LLM guide cites page 99 when source is only on page 2. Citation validator must flag page discrepancy.",
+    "case_record": {
+      "case_id": "case_tc10",
+      "language": "en",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017,
+        "engine": "1.4L"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.85
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Belt wear",
+            "prob": 0.8,
+            "evidence": [
+              "Noise"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "tsb_gm_19-NA-037",
+        "document_title": "GM Bulletin 19-NA-037",
+        "page": 2,
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year_min": 2016,
+        "year_max": 2019,
+        "system": "engine",
+        "section": "procedure",
+        "language": "en",
+        "text": "Rotate tensioner and replace belt."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc10",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Cruze",
+        "year": 2017
+      },
+      "fault": {
+        "name": "Belt wear",
+        "certainty": "probable",
+        "evidence_summary": "Squeal sound."
+      },
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [
+          "Wrench"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Loosen tensioner.",
+            "source_id": "tsb_gm_19-NA-037",
+            "page": 99,
+            "warning": null
+          }
+        ]
+      },
+      "safety_warnings": [
+        "Be careful."
+      ],
+      "limitations": [],
+      "recommendation": "Consult mechanic if needed."
+    },
+    "expected_status": "guide_available",
+    "should_pass_validation": false,
+    "expected_validation_error": "does not match source"
+  },
+  {
+    "case_id": "TC-11",
+    "name": "compatible_jetta_alternator_replacement",
+    "description": "Positive retrieval case: 2014 Jetta alternator guide matches the exact model and year and contains a replacement procedure.",
+    "case_record": {
+      "case_id": "case_tc11",
+      "language": "en",
+      "vehicle": {
+        "make": "Volkswagen",
+        "model": "Jetta",
+        "year": 2014,
+        "engine": "2.0L"
+      },
+      "audio": {
+        "class": "electrical_whine",
+        "confidence": 0.86
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Alternator failure",
+            "prob": 0.82,
+            "evidence": [
+              "Charging-system whine"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "ifixit_guide_138595",
+        "document_title": "2011-2017 Volkswagen Jetta Alternator Replacement",
+        "page": 1,
+        "make": "Volkswagen",
+        "model": "Jetta",
+        "year_min": 2011,
+        "year_max": 2017,
+        "system": "electrical/charging",
+        "section": "procedure",
+        "language": "en",
+        "text": "This guide will help you replace the alternator from a 2011-2017 Volkswagen Jetta."
+      },
+      {
+        "source_id": "ifixit_guide_138595",
+        "document_title": "2011-2017 Volkswagen Jetta Alternator Replacement",
+        "page": 13,
+        "make": "Volkswagen",
+        "model": "Jetta",
+        "year_min": 2011,
+        "year_max": 2017,
+        "system": "electrical/charging",
+        "section": "procedure",
+        "language": "en",
+        "text": "Take the alternator out of the engine by pulling to the left and out."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc11",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Volkswagen",
+        "model": "Jetta",
+        "year": 2014
+      },
+      "fault": {
+        "name": "Alternator failure",
+        "certainty": "probable",
+        "evidence_summary": "The case reports a charging-system whine; the retrieved Jetta guide documents alternator replacement."
+      },
+      "applicability": {
+        "scope": "vehicle_specific",
+        "note": "The guide covers 2011-2017 Volkswagen Jetta models.",
+        "source_ids": [
+          "ifixit_guide_138595"
+        ]
+      },
+      "parts_to_replace": [
+        {
+          "name": "Alternator",
+          "role": "replace",
+          "part_number": null,
+          "source_id": "ifixit_guide_138595"
+        }
+      ],
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Remove the alternator by pulling it to the left and out of the engine.",
+            "source_id": "ifixit_guide_138595",
+            "page": 13,
+            "warning": null,
+            "applicability_scope": "vehicle_specific"
+          }
+        ]
+      },
+      "safety_warnings": [],
+      "limitations": [
+        "Follow the remaining guide steps and confirm engine-specific fitment before beginning."
+      ],
+      "recommendation": "Use the complete guide for the 2011-2017 Jetta and verify the replacement part fits the vehicle."
+    },
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-12",
+    "name": "compatible_elantra_spark_plug_replacement",
+    "description": "Positive retrieval case: 2013 Elantra spark-plug replacement guide matches the model year and names the serviced part.",
+    "case_record": {
+      "case_id": "case_tc12",
+      "language": "en",
+      "vehicle": {
+        "make": "Hyundai",
+        "model": "Elantra",
+        "year": 2013,
+        "engine": "1.8L"
+      },
+      "audio": {
+        "class": "misfire_rough_idle",
+        "confidence": 0.84
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Worn spark plugs",
+            "prob": 0.79,
+            "evidence": [
+              "Rough idle and intermittent misfire"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "ifixit_guide_168211",
+        "document_title": "2010-2015 Hyundai Elantra Spark Plug Replacement",
+        "page": 1,
+        "make": "Hyundai",
+        "model": "Elantra",
+        "year_min": 2010,
+        "year_max": 2015,
+        "system": "ignition/misfire",
+        "section": "procedure",
+        "language": "en",
+        "text": "This guide shows how to replace the spark plugs in a 2011 Hyundai Elantra. Worn spark plugs can cause rough idling and engine misfiring."
+      },
+      {
+        "source_id": "ifixit_guide_168211",
+        "document_title": "2010-2015 Hyundai Elantra Spark Plug Replacement",
+        "page": 10,
+        "make": "Hyundai",
+        "model": "Elantra",
+        "year_min": 2010,
+        "year_max": 2015,
+        "system": "ignition/misfire",
+        "section": "procedure",
+        "language": "en",
+        "text": "Insert the new spark plugs gently using the magnetic pickup tool."
+      }
+    ],
+    "mock_guide_output": {
+      "case_id": "case_tc12",
+      "status": "guide_available",
+      "vehicle": {
+        "make": "Hyundai",
+        "model": "Elantra",
+        "year": 2013
+      },
+      "fault": {
+        "name": "Worn spark plugs",
+        "certainty": "probable",
+        "evidence_summary": "The reported rough idle and intermittent misfire are consistent with the retrieved Elantra guide's description of worn spark plugs."
+      },
+      "applicability": {
+        "scope": "vehicle_specific",
+        "note": "The guide is for 2010-2015 Hyundai Elantra models.",
+        "source_ids": [
+          "ifixit_guide_168211"
+        ]
+      },
+      "parts_to_replace": [
+        {
+          "name": "Spark plugs",
+          "role": "replace",
+          "part_number": null,
+          "source_id": "ifixit_guide_168211"
+        }
+      ],
+      "repair_guide": {
+        "difficulty": "intermediate",
+        "tools": [
+          "Magnetic pickup tool"
+        ],
+        "steps": [
+          {
+            "number": 1,
+            "action": "Insert the new spark plugs gently using the magnetic pickup tool.",
+            "source_id": "ifixit_guide_168211",
+            "page": 10,
+            "warning": null,
+            "applicability_scope": "vehicle_specific"
+          }
+        ]
+      },
+      "safety_warnings": [],
+      "limitations": [
+        "The guide describes a 2011 Elantra; confirm engine fitment and use the vehicle-specific service specifications."
+      ],
+      "recommendation": "Confirm the spark plug specification for the 1.8L engine before replacement."
+    },
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "should_pass_validation": true
+  },
+  {
+    "case_id": "TC-13",
+    "name": "exact_vehicle_named_replacement",
+    "description": "Exact 2012-2015 Honda Civic manual match for the 1.8L engine. The guide must name the alternator and limit coverage to vehicles matching the documented engine fitment.",
+    "test_mode": "agent3_local",
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "expected_replacement_parts": [
+      "alternator"
+    ],
+    "expected_applicability_scope": "some_vehicles",
+    "should_pass_validation": true,
+    "case_record": {
+      "case_id": "case_tc13",
+      "language": "en",
+      "vehicle": {
+        "make": "Honda",
+        "model": "Civic",
+        "year": 2014,
+        "engine": "1.8L"
+      },
+      "audio": {
+        "class": "electrical_whine",
+        "confidence": 0.83
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Alternator bearing noise",
+            "prob": 0.78,
+            "evidence": [
+              "Whine rises with engine speed"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "manual_honda_civic_alt_001",
+        "document_title": "Honda Civic Alternator Replacement, 2012-2015",
+        "page": 44,
+        "make": "Honda",
+        "model": "Civic",
+        "year_min": 2012,
+        "year_max": 2015,
+        "system": "electrical",
+        "section": "procedure",
+        "language": "en",
+        "text": "For 2012-2015 Honda Civic 1.8L models, disconnect the negative battery cable. Remove the alternator drive belt and electrical connector. Remove the alternator mounting bolts and replace the alternator assembly."
+      }
+    ]
+  },
+  {
+    "case_id": "TC-14",
+    "name": "vehicle_manual_not_found",
+    "description": "No retrieved workshop passages for the specified 2022 Toyota Prius. Agent 3 must return a clear insufficient-information result without borrowing unrelated procedures.",
+    "test_mode": "agent3_local",
+    "expected_status": "insufficient_information",
+    "expected_steps_count": 0,
+    "should_pass_validation": true,
+    "case_record": {
+      "case_id": "case_tc14",
+      "language": "en",
+      "vehicle": {
+        "make": "Toyota",
+        "model": "Prius",
+        "year": 2022,
+        "engine": "1.8L Hybrid"
+      },
+      "audio": {
+        "class": "engine_rattle",
+        "confidence": 0.73
+      },
+      "diagnosis": {
+        "status": "suspected",
+        "causes": [
+          {
+            "name": "Water pump bearing noise",
+            "prob": 0.58,
+            "evidence": [
+              "Rattle from engine bay"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": []
+  },
+  {
+    "case_id": "TC-15",
+    "name": "explicitly_shared_cross_vehicle_procedure",
+    "description": "No Equinox-specific manual was retrieved, but a GMC Terrain procedure explicitly says it also applies to the same-year Chevrolet Equinox with the same 2.4L engine. It is usable only with conditional some-vehicles scope and a cited named part.",
+    "test_mode": "agent3_local",
+    "expected_status": "guide_available",
+    "expected_steps_count_min": 1,
+    "expected_replacement_parts": [
+      "water pump"
+    ],
+    "expected_applicability_scope": "some_vehicles",
+    "should_pass_validation": true,
+    "case_record": {
+      "case_id": "case_tc15",
+      "language": "en",
+      "vehicle": {
+        "make": "Chevrolet",
+        "model": "Equinox",
+        "year": 2018,
+        "engine": "2.4L Ecotec"
+      },
+      "audio": {
+        "class": "engine_rattle",
+        "confidence": 0.78
+      },
+      "diagnosis": {
+        "status": "probable",
+        "causes": [
+          {
+            "name": "Water pump bearing failure",
+            "prob": 0.76,
+            "evidence": [
+              "Rattle near accessory drive"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "manual_gmc_terrain_shared_pump_002",
+        "document_title": "GMC Terrain 2.4L Water Pump Service Procedure",
+        "make": "GMC",
+        "model": "Terrain",
+        "year_min": 2017,
+        "year_max": 2018,
+        "system": "cooling",
+        "language": "en",
+        "page": 80,
+        "section": "general",
+        "text": "This procedure applies to both the 2017-2018 GMC Terrain and Chevrolet Equinox equipped with the same 2.4L Ecotec engine."
+      },
+      {
+        "source_id": "manual_gmc_terrain_shared_pump_002",
+        "document_title": "GMC Terrain 2.4L Water Pump Service Procedure",
+        "make": "GMC",
+        "model": "Terrain",
+        "year_min": 2017,
+        "year_max": 2018,
+        "system": "cooling",
+        "language": "en",
+        "page": 81,
+        "section": "procedure",
+        "fitment_evidence": "This procedure applies to both the 2017-2018 GMC Terrain and Chevrolet Equinox equipped with the same 2.4L Ecotec engine.",
+        "text": "Remove the accessory drive belt and water pump pulley. Replace the water pump gasket and water pump, then tighten the bolts to the vehicle service specification."
+      }
+    ]
+  },
+  {
+    "case_id": "TC-16",
+    "name": "unverified_other_vehicle_procedure_rejected",
+    "description": "A Honda Accord has no matching manual; retrieval returned a Toyota Camry procedure for a similar symptom. Since the Toyota source does not state shared fitment, Agent 3 must not transfer its repair steps or part.",
+    "test_mode": "agent3_local",
+    "expected_status": "insufficient_information",
+    "expected_steps_count": 0,
+    "should_pass_validation": true,
+    "case_record": {
+      "case_id": "case_tc16",
+      "language": "en",
+      "vehicle": {
+        "make": "Honda",
+        "model": "Accord",
+        "year": 2016,
+        "engine": "2.4L"
+      },
+      "audio": {
+        "class": "belt_squeal",
+        "confidence": 0.77
+      },
+      "diagnosis": {
+        "status": "suspected",
+        "causes": [
+          {
+            "name": "Accessory belt squeal",
+            "prob": 0.63,
+            "evidence": [
+              "Squeak at cold start"
+            ]
+          }
+        ]
+      },
+      "checks": []
+    },
+    "retrieved_sources": [
+      {
+        "source_id": "manual_toyota_camry_belt_003",
+        "document_title": "Toyota Camry Accessory Belt Replacement",
+        "page": 39,
+        "make": "Toyota",
+        "model": "Camry",
+        "year_min": 2015,
+        "year_max": 2017,
+        "system": "engine_accessories",
+        "section": "procedure",
+        "language": "en",
+        "text": "For 2015-2017 Toyota Camry models, relieve tension at the belt tensioner, remove the old drive belt, and install a new accessory drive belt following the routing diagram."
+      }
+    ]
+  }
+]
