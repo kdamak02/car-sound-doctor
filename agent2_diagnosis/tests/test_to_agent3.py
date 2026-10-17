@@ -3,11 +3,14 @@ import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 from agent2_diagnosis.to_agent3 import to_agent3
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA = json.loads((ROOT / "agent3_repair/schemas/agent3_input.schema.json").read_text("utf-8"))
+SCHEMA_FILE = ROOT / "agent3_repair/schemas/agent3_input.schema.json"
+pytestmark = pytest.mark.skipif(not SCHEMA_FILE.exists(), reason="Agent 3 (agent3_repair) is not merged on this branch yet")
+SCHEMA = json.loads(SCHEMA_FILE.read_text("utf-8")) if SCHEMA_FILE.exists() else None
 OUT = {"pass": 2, "conclusive": True, "checks": [], "causes": [
     {"name": "Batterie déchargée", "label": "dead_battery", "prob": 0.9, "evidence": ["le conducteur dit : les cosses sont propres", "clio4ph1fr_p225_c1", "passage clio4ph1fr_p225_c1"]},
     {"name": "Cosses", "label": None, "prob": 0.1, "evidence": []}]}
