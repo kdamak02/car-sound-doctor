@@ -1,3 +1,5 @@
+> **For the defense use `DEMO_DAY.md`** (whole chain, checklist, fallbacks, questions). This file is the earlier Agent 2 only script.
+
 # Agent 2 demo script (about 5 minutes, B2)
 
 Goal: show a real **AI Agent node calling a RAG tool**, answers **with citations**, a **second pass that changes the ranking**, and an **honest refusal**. Every claim below is tied to a grading criterion.

@@ -79,7 +79,8 @@ Cases that the manuals cover (`agent2_diagnosis/tests/cases/README.md`): Clio st
 2. Create the real bot with @BotFather and run it (`n8n/telegram_front/README.md`, step "Set up the real bot"); send a voice note; check several chats and the 30-minute timeout idea of ARCHITECTURE.md §7 (not implemented: the state just waits).
 3. Send the Agent 3 note (problem 1) to group C; ask B1 about the `rerank` flag and the `maintenance` section (Agent 2 and Agent 3 both read it).
 4. Open the PR for `integration/agent2-agent3` after telling the team: it contains about 90 MB of Agent 3 data. The file `agent3_repair/data/qdrant_db/.../storage.sqlite` changes whenever Agent 3 runs: do not commit it (`git checkout --` it after stopping Agent 3).
-5. Finish the report (`report/agent2_sections.md` is a draft), pre-record a demo run (`agent2_diagnosis/DEMO.md` is the script), prepare answers to jury questions (same file).
+5. Demo day: follow `agent2_diagnosis/DEMO_DAY.md` and run `python agent2_diagnosis/tests/preflight.py` before starting.
+6. Finish the report (`report/agent2_sections.md` is a draft), pre-record a demo run (`agent2_diagnosis/DEMO.md` is the script), prepare answers to jury questions (same file).
 6. Optional: row-level chunking of the cause tables; more evaluation queries; a second labeller.
 
 ## 7. Troubleshooting
