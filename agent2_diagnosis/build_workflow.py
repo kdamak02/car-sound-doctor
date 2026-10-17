@@ -245,6 +245,8 @@ if os.getenv("AGENT1", "false").lower() == "true":  # second entry: voice note +
     connections["Audio usable?"] = {"main": [[{"node": "Prepare input", "type": "main", "index": 0}],
                                              [{"node": "Ask for a new recording", "type": "main", "index": 0}]]}
 
+A1_OF_CASE = ("// Agent 1's analysis of this case, when the audio entry was used\n"
+              "const a1 = (() => { try { return $('Merge audio').first().json.body.audio || null; } catch (e) { return null; } })();\n")
 if os.getenv("AGENT3", "false").lower() == "true":  # hand the final answer to Agent 3 (repair guide); reply = {agent2, agent3}
     TO_A3 = (src("agent2_to_agent3.js") + "\nlet c;\ntry { c = $('Webhook').first().json.body; } catch (e) { c = null; }\n"
              "if (!c) { try { c = $('Merge audio').first().json.body; } catch (e) { c = null; } }\n"
@@ -261,8 +263,8 @@ if os.getenv("AGENT3", "false").lower() == "true":  # hand the final answer to A
              {"method": "POST", "url": os.getenv("AGENT3_URL", "http://host.docker.internal:8003/generate"), "sendBody": True,
               "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ case_record: $json.case_record, retrieve: true }) }}",
               "options": {"timeout": 150000}}, [2280, -60], onError="continueRegularOutput"),
-        code("Reply (Agent 2 + Agent 3)", "return { json: { agent2: $('To Agent 3').first().json.agent2, agent3: $json } };" + "\n", [2520, -60]),
-        code("Reply (Agent 2 only)", "return { json: { agent2: $json, agent3: null } };" + "\n", [2040, 100]),
+        code("Reply (Agent 2 + Agent 3)", A1_OF_CASE + "return { json: { agent1: a1, agent2: $('To Agent 3').first().json.agent2, agent3: $json } };\n", [2520, -60]),
+        code("Reply (Agent 2 only)", A1_OF_CASE + "return { json: { agent1: a1, agent2: $json, agent3: null } };\n", [2040, 100]),
     ]
     connections["Output"] = link("Final answer?")
     connections["Final answer?"] = {"main": [[{"node": "To Agent 3", "type": "main", "index": 0}],

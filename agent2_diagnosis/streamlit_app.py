@@ -11,6 +11,7 @@ Needs: n8n running with the workflow "Agent 2 - diagnosis and checks" ACTIVE and
 """
 import copy
 import json
+import mimetypes
 import os
 import sys
 from datetime import datetime, timezone
@@ -62,11 +63,16 @@ def build_case(f: dict) -> dict:
     }
 
 
-def call_agent(url: str, case: dict, timeout: int):
-    """-> (result dict | None, error message | None)"""
+def call_agent(url: str, case: dict, timeout: int, audio=None):
+    """-> (result dict | None, error message | None). `audio` = (file name, bytes): send the voice note to the audio entry
+    of the workflow (Agent 1 then Agent 2); the workflow reply is {agent1, agent2, agent3} when built with AGENT3=true."""
     try:
-        r = requests.post(url, data=json.dumps(case, ensure_ascii=False).encode("utf-8"),
-                          headers={"Content-Type": "application/json; charset=utf-8"}, timeout=timeout)
+        if audio:
+            r = requests.post(url.replace("agent2-diagnose", "agent2-diagnose-audio"), timeout=timeout,
+                              files={"audio": (audio[0], audio[1], mimetypes.guess_type(audio[0])[0] or "application/octet-stream")}, data={"case": json.dumps(case, ensure_ascii=False)})
+        else:
+            r = requests.post(url, data=json.dumps(case, ensure_ascii=False).encode("utf-8"),
+                              headers={"Content-Type": "application/json; charset=utf-8"}, timeout=timeout)
     except requests.RequestException as e:
         return None, f"Impossible de joindre n8n ({e.__class__.__name__}). Docker et n8n sont-ils lancés ?"
     try:
@@ -81,8 +87,52 @@ def call_agent(url: str, case: dict, timeout: int):
     return body, None
 
 
+def unwrap(body: dict):
+    """Workflow reply -> (agent1, agent2 output, agent3, needs_new_audio message). Plain agent2_output when built without AGENT3."""
+    if body.get("needs_new_audio"):
+        return None, None, None, body.get("message") or "Enregistrement inutilisable."
+    if "agent2" in body:
+        return body.get("agent1"), body["agent2"], body.get("agent3"), None
+    return None, body, None, None
+
+
+def show_agent1(a1: dict):
+    st.subheader("Agent 1 · analyse du son")
+    if not a1 or a1.get("status") != "ok":
+        st.warning("Pas d'audio exploitable : l'Agent 2 travaille sur le texte seul.")
+        return
+    top = ", ".join(f"{LABEL_NAME.get(t['label'], t['label'])} {round(t['prob'] * 100)} %" for t in a1.get("top3", []))
+    st.info(f"**{LABEL_NAME.get(a1['label'], a1['label'])}** · confiance {a1['confidence']} · bruit inhabituel {a1['anomaly_score']}  \n"
+            f"Autres possibilités : {top}  \n{a1.get('description', {}).get('summary', '')}")
+
+
+def show_agent3(a3: dict):
+    st.subheader("Agent 3 · guide de réparation")
+    if not a3:
+        st.caption("Pas encore de guide : l'Agent 3 reçoit le dossier quand le diagnostic est conclusif ou après le dernier tour.")
+        return
+    guide = a3.get("guide")
+    if not guide:
+        st.warning("L'Agent 3 n'a pas répondu : " + str(a3.get("error") or a3.get("message") or a3)[:300])
+        return
+    status = guide.get("status")
+    (st.success if status == "guide_available" else st.warning)(
+        f"Statut : {status} · panne : {(guide.get('fault') or {}).get('name', '?')}")
+    for w in guide.get("safety_warnings") or []:
+        st.error("⚠️ " + str(w))
+    steps = (guide.get("repair_guide") or {}).get("steps") or []
+    for stp in steps:
+        st.markdown(f"**{stp.get('number')}.** {stp.get('action')}  \n*source : {stp.get('source_id')}"
+                    + (f", p. {stp['page']}" if stp.get("page") else "") + "*")
+    for lim in guide.get("limitations") or []:
+        st.caption("Limite : " + str(lim))
+    val = a3.get("validation") or {}
+    st.caption(f"Validation Agent 3 : {'OK' if val.get('valid') else 'à vérifier'} · citations "
+               f"{'OK' if val.get('citations_valid') else '?'} · sécurité {'OK' if val.get('safety_passed') else '?'}")
+
+
 def reset():
-    for k in ("case", "result", "history", "error", "answers_key"):
+    for k in ("case", "result", "history", "error", "answers_key", "agent1", "agent3", "new_audio"):
         st.session_state.pop(k, None)
 
 
@@ -118,6 +168,9 @@ with st.sidebar:
     url = st.text_input("Webhook Agent 2 (n8n)", DEFAULT_URL)
     timeout = st.slider("Délai max (secondes)", 30, 400, 300)
     st.caption("Un appel dure de 40 secondes à 2 minutes et demie (modèle local + reranker sur CPU). Avec Gemini : 3 à 4 requêtes du quota gratuit.")
+    full = st.toggle("Chaîne complète : Agent 1 + 2 + 3", value=False,
+                     help="Envoie la note vocale à n8n (entrée audio) : Agent 1 analyse le son, Agent 2 diagnostique, Agent 3 écrit le guide. "
+                          "Demande le workflow construit avec AGENT1=true AGENT3=true, Agent 1 sur :8001 et Agent 3 sur :8003.")
     st.divider()
     st.caption("Cas d'exemple")
     example = st.selectbox("Charger un cas", ["(formulaire vide)"] + [p.name for p in CASES])
@@ -170,21 +223,33 @@ with st.form("case_form", border=True):
     freq = e1.number_input("Fréquence dominante (Hz)", 0.0, 20000.0, float(defaults["freq"]))
     periodic = e1.checkbox("Impacts réguliers", defaults["periodic"])
     audio_summary = e2.text_area("Résumé du son", defaults["audio_summary"], height=100)
-    go = st.form_submit_button("Lancer l'Agent 2", type="primary", disabled=started)
+    up = st.file_uploader("Note vocale du moteur (OGG, WAV, MP3, M4A)", type=["ogg", "oga", "opus", "wav", "mp3", "m4a"],
+                          help="Utilisée en mode chaîne complète : l'Agent 1 analyse ce fichier au lieu des champs ci-dessus.") if full else None
+    go = st.form_submit_button("Lancer la chaîne" if full else "Lancer l'Agent 2", type="primary", disabled=started)
 
 if go:
     case = build_case({"make": make, "model": model, "year": int(year), "fuel": fuel, "text": text, "symptom": symptom,
                        "context": context, "no_audio": no_audio, "label": label, "prob": prob, "anomaly": anomaly,
                        "confidence": confidence, "freq": freq, "periodic": periodic, "audio_summary": audio_summary})
-    with st.spinner("L'agent cherche dans les manuels et réfléchit (jusqu'à 2 minutes et demie)..."):
-        res, err = call_agent(url, case, timeout)
+    audio = (up.name, up.getvalue()) if (full and up is not None) else None
+    if audio:
+        case.pop("audio", None)  # Agent 1 fills it from the recording
+    with st.spinner("Les agents travaillent (jusqu'à 3 minutes)..." if full else "L'agent cherche dans les manuels et réfléchit (jusqu'à 2 minutes et demie)..."):
+        body, err = call_agent(url, case, timeout, audio)
+    a1, res, a3, again = unwrap(body) if body is not None else (None, None, None, None)
     st.session_state.error = err
+    st.session_state.new_audio = again
     if res is not None:
+        if a1:
+            case["audio"] = a1  # pass 2 sends the real Agent 1 analysis back
         st.session_state.case, st.session_state.result, st.session_state.history = case, res, []
+        st.session_state.agent1, st.session_state.agent3 = a1, a3
         st.rerun()
 
 if st.session_state.get("error"):
     st.error(st.session_state.error)
+if st.session_state.get("new_audio"):
+    st.warning(st.session_state.new_audio)
 
 # ------------------------------------------------------------------ step 2: results and answers
 
@@ -192,8 +257,12 @@ if "case" in st.session_state:
     case, res = st.session_state.case, st.session_state.result
     round_ = case["round"]
     st.divider()
+    if st.session_state.get("agent1"):
+        show_agent1(st.session_state.agent1)
     st.subheader("2. Réponse de l'Agent 2" + (f" (pass {res['pass']})" if "pass" in res else ""))
     show_result(res, round_)
+    if full:
+        show_agent3(st.session_state.get("agent3"))
 
     if res.get("checks") and not res.get("conclusive") and round_ < MAX_ROUNDS:
         st.subheader("Vérifications à faire")
@@ -221,11 +290,12 @@ if "case" in st.session_state:
             nxt["check_answers"] = case.get("check_answers", []) + [
                 {"check_id": k, "answer": v, "round": nxt["round"]} for k, v in answers.items()]
             with st.spinner("Nouvelle analyse avec vos réponses..."):
-                new, err = call_agent(url, nxt, timeout)
+                body2, err = call_agent(url, nxt, timeout)
             st.session_state.error = err
+            _, new, a3, _ = unwrap(body2) if body2 is not None else (None, None, None, None)
             if new is not None:
                 st.session_state.history.append(res)
-                st.session_state.case, st.session_state.result = nxt, new
+                st.session_state.case, st.session_state.result, st.session_state.agent3 = nxt, new, a3
             st.rerun()
 
     if st.session_state.history:

@@ -91,3 +91,33 @@ def test_insufficient_answer_is_shown():
         click(at, "Lancer l'Agent 2")
         at.run()
         assert not at.exception and any("no manual passages" in w.value for w in at.warning)
+
+
+def test_full_chain_shows_the_three_agents():
+    a1 = {"status": "ok", "label": "dead_battery", "context": "startup", "confidence": "medium", "anomaly_score": 0.88,
+          "top3": [{"label": "dead_battery", "prob": 0.7}, {"label": "bad_ignition", "prob": 0.2}],
+          "description": {"summary": "Un clic sec."}}
+    a3 = {"guide": {"status": "guide_available", "fault": {"name": "Batterie"}, "safety_warnings": ["Coupez le contact"],
+                    "repair_guide": {"steps": [{"number": 1, "action": "Débrancher la borne négative", "source_id": "ifixit_1", "page": 3}]},
+                    "limitations": ["guide générique"]},
+          "validation": {"valid": True, "citations_valid": True, "safety_passed": True}}
+    reply = {"agent1": a1, "agent2": PASS2, "agent3": a3}
+    with patch("requests.post", lambda *a, **k: FakeResponse(reply)):
+        at = AppTest.from_file(APP, default_timeout=30).run()
+        at.toggle[0].set_value(True)
+        at.run()
+        click(at, "Lancer la chaîne")
+        at.run()
+        assert not at.exception
+        text = " ".join(m.value for m in list(at.markdown) + list(at.info) + list(at.success) + list(at.error) + list(at.caption))
+        assert "Agent 1" in text and "Débrancher la borne négative" in text and "guide_available" in text and "Coupez le contact" in text
+
+
+def test_unusable_recording_asks_for_a_new_one():
+    with patch("requests.post", lambda *a, **k: FakeResponse({"needs_new_audio": True, "message": "refaites un enregistrement"})):
+        at = AppTest.from_file(APP, default_timeout=30).run()
+        at.toggle[0].set_value(True)
+        at.run()
+        click(at, "Lancer la chaîne")
+        at.run()
+        assert not at.exception and any("refaites un enregistrement" in w.value for w in at.warning)
