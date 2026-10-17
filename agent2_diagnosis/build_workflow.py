@@ -74,9 +74,10 @@ if MODE == "prefetch":  # Basic LLM Chain answers in `text`; the passages come f
     AGENT_OUT = "{ output: $json.text ?? $json.response ?? $json.output, intermediateSteps: $('Retrieve passages').first().json.observations }"
 else:                   # AI Agent node: tool results are in intermediateSteps
     AGENT_OUT = "{ output: $json.output, intermediateSteps: $json.intermediateSteps }"
+AGENT_STEPS_JS = "(() => { const st = $('Agent 2').first().json.intermediateSteps || []; if (st.length) return st; try { return $('Rescue prompt').first().json.observations || []; } catch (e) { return []; } })()"
 if os.getenv("LLM", "gemini") == "ollama" and os.getenv("MODE", "tool") == "tool" and os.getenv("RESCUE", "true").lower() == "true":
     # the answer comes either from the agent (`output`) or from the rescue chain (`text`); the passages are always the agent's
-    AGENT_OUT = "{ output: $json.output !== undefined ? $json.output : $json.text, intermediateSteps: $('Agent 2').first().json.intermediateSteps }"
+    AGENT_OUT = "{ output: $json.output !== undefined ? $json.output : $json.text, intermediateSteps: " + AGENT_STEPS_JS + " }"
 SUPPORT = os.getenv("SUPPORT_CHECK", "true").lower()  # citation support check through the reranker; SUPPORT_CHECK=false skips it
 POSTPROCESS = (f"const SUPPORT = {SUPPORT};\nconst LABELS = {json.dumps(LABELS, ensure_ascii=False)};\n\n" + src("agent2_postprocess.js") +
                "\nconst ctx = $('Prepare input').first().json.ctx;\n"
@@ -86,7 +87,14 @@ POSTPROCESS = (f"const SUPPORT = {SUPPORT};\nconst LABELS = {json.dumps(LABELS, 
                "const checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3, ($('Prepare input').first().json.queries || [''])[0]) : answer;\n"
                "return { json: postprocess(ctx, checked, LABELS) };\n")
 RESCUE_ON = LLM == "ollama" and MODE == "tool" and os.getenv("RESCUE", "true").lower() == "true"
-RESCUE = src("agent2_rescue.js") + f"\nreturn {{ json: rescue($('Prepare input').first().json, $('Agent 2').first().json.intermediateSteps, {MAX_PASSAGES}) }};\n"
+RESCUE = (f"const RAG_URL = {json.dumps(RAG_URL)};\nconst TOP_K = {TOP_K};\n\n" + src("agent2_rescue.js") + "\n" + src("agent2_retrieve.js") +
+          "\nconst search = (query, filters, top_k) => this.helpers.httpRequest({\n"
+          "  method: 'POST', url: RAG_URL, body: { query, filters, top_k, rerank: true }, json: true });\n"
+          "const prep = $('Prepare input').first().json;\n"
+          "let steps = $('Agent 2').first().json.intermediateSteps || [];\n"
+          "// the agent failed before giving any tool result (a 7B loop): search here instead, the answer is still grounded in /search\n"
+          f"if (!steps.length) steps = (await retrieve({{ ...prep, top_k: TOP_K }}, search, {MAX_PASSAGES})).observations;\n"
+          f"return {{ json: {{ ...rescue(prep, steps, {MAX_PASSAGES}), observations: steps }} }};\n")
 GUARDRAILS = src("validate_output.js")  # the team's node, unchanged
 OUTPUT = "return { json: $json.output };\n"
 INSUFFICIENT = ("const reason = $json.reason || ($json.problems || []).join('; ');\n"
@@ -165,8 +173,8 @@ else:
              [520, 100], **({"onError": "continueRegularOutput"} if RESCUE_ON else {})),  # a 7B loop on empty search results ends in an error: treat it as "no answer", the rescue path then ends as insufficient
         LLM_NODE,
         node("rag_search", "@n8n/n8n-nodes-langchain.toolHttpRequest", 1.1,
-             {"toolDescription": "Search the car manuals and OBD-II code database. Input: query = a short search text "
-                                 "(symptom wording, the likely fault, or the driver's answers). Returns passages, each with "
+             {"toolDescription": "Search the car manuals and OBD-II code database. Input: query = one full sentence "
+                                 "in the driver's own words (the symptom, the likely fault, or the driver's answers). Returns passages, each with "
                                  "chunk_id, text, source, page, score, and fallback_level. Vehicle filters are added automatically.",
               "method": "POST", "url": RAG_URL, "sendBody": True, "specifyBody": "json", "jsonBody": TOOL_BODY,
               "placeholderDefinitions": {"values": [{"name": "query", "description": "search text, in the driver's language "

@@ -29,9 +29,13 @@ Rules:
 - If the answers still do not separate the top causes and new checks are allowed, ask up to 3 new checks
   (do not repeat an earlier check). If new checks are not allowed, return "checks": [].
 - If the retrieval level is not exact_model, say so in message_to_user.
-- Order causes from the most to the least likely. In message_to_user speak first about the most likely cause,
-  then mention the less likely ones briefly. If a less likely cause involves brakes, steering, overheating or
-  oil pressure, add one sentence telling the driver to be careful until it is ruled out.
+- Order causes from the most to the least likely.
+- message_to_user is the advice for the driver, in this order: (1) for the MOST likely cause, one concrete action the
+  passages describe, with the page in brackets, for example (p. 225); (2) then at most two short lines for the less likely
+  causes, each starting with the cause name and its own action; (3) if a less likely cause involves brakes, steering,
+  overheating or oil pressure, one sentence telling the driver to be careful until it is ruled out. Use only actions that a
+  passage describes; if no passage gives an action, say to have it checked at a garage. Do not give repair steps (another
+  agent does that). If you ask checks, end with a sentence asking the driver to answer them.
 - "name" is a short readable phrase in the driver's language, never a label id or a chunk id. Each "evidence" line is a
   short fact from a passage or a quote of the driver, not an id.
 - The audio analysis ends with a "Reading guide" line: follow it (for example, when the sound is probably healthy, ask
@@ -55,7 +59,7 @@ Answer with JSON only:
 Probabilities across causes sum to 1.
 
 How to work when you have the rag_search tool:
-1. Call it ONCE with a short query about the driver's problem.
+1. Call it ONCE. The query is ONE full sentence in the driver's own words (for example: le démarreur ne tourne pas, j'entends un clic), not a list of keywords.
 2. When you receive the passages, STOP calling tools and write the final answer.
 3. The final answer is ONLY the JSON object described above: no sentence before or after it, no markdown.
 Copy every chunk_id exactly as it appears in the passages.
@@ -90,6 +94,7 @@ The `status` field is read by the code only (a `contradicted` cause is capped at
 | v2.2 | 2026-10-16 | rule: follow the audio "Reading guide" line (computed from Agent 1's decision table) | Agent 1's integration guide defines how to read label + anomaly score + confidence | to measure |
 | v2.3 | 2026-10-16 | explicit working procedure when the rag_search tool exists (one search, then the final JSON only, ids copied exactly); temperature 0 in the n8n model node | local 7B model (qwen2.5:7b) as tool-calling agent: in an offline replica of the n8n agent loop 3 of 6 runs usable (empty final message after the tool result x2, endless tool calls x1), plus 0 of about 25 in n8n | 12 of 12 usable (offline replica), 6 of 6 at temperature 0, about 14 s |
 | v2.4 | 2026-10-15 | per-cause `status` (confirmed / contradicted / not_tested) with a worked example; code caps a contradicted cause at 0.05 | the 7B model ignored contradicting answers: driver says "les cosses sont propres et serrées", the cause "cosses mal serrées" stayed at 0.30 | contradiction handled in **1/8** runs (v2.3) -> 3/8 (free-text rule + example) -> **7/8** (status field + code cap), same case, 8 runs each |
+| v2.5 | 2026-10-16 | message_to_user = ordered advice: concrete action for the most likely cause with its page, one line per less likely cause, caution for risky ones, no repair steps (Agent 3's job) | the message only asked questions and never said what to do (team decision: recommend most likely first, then less likely) | to measure on the 4 manual cases |
 
 ## Failure cases and before / after
 

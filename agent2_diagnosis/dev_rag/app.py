@@ -36,6 +36,7 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")  # Apache-2.
 RERANK_DEVICE = os.getenv("DEV_RAG_RERANK_DEVICE", "cpu")  # the 8 GB GPU belongs to Ollama
 RERANK_POOL = int(os.getenv("DEV_RAG_RERANK_POOL", "8"))  # candidates sent to the cross-encoder
 RERANK_MIN = float(os.getenv("DEV_RAG_RERANK_MIN", "0.03"))  # reranker score (0-1) under which a passage is not an answer
+RERANK_MIN_FALLBACK = float(os.getenv("DEV_RAG_RERANK_MIN_FALLBACK", "0.15"))  # stricter when the vehicle level is relaxed (make / generic): weak matches from other cars are noise
 RERANK_ORDER = os.getenv("DEV_RAG_RERANK_ORDER", "false").lower() == "true"  # reorder by cross-encoder score (default: keep the hybrid order, use the score only to drop)
 PRE_MIN = 0.30  # dense cosine floor when reranking: the cross-encoder decides, this only drops obvious noise
 HYBRID = os.getenv("DEV_RAG_HYBRID", "true").lower() == "true"  # dense + BM25 fused with RRF (config C3 of the evaluation)
@@ -158,14 +159,14 @@ def search(req: SearchRequest):
         if use_rerank:
             pool = [int(i) for i in order if scores[i] >= PRE_MIN][:RERANK_POOL]
             if pool:
-                pairs = [(req.query, rows_all[i]["text"][:800]) for i in pool]
+                pairs = [(req.query, rows_all[i]["text"][:1500]) for i in pool]
                 rr = np.asarray(state["reranker"].predict(pairs, batch_size=8, show_progress_bar=False), dtype=float)
                 if rr.min() < 0 or rr.max() > 1:  # raw logits -> probability
                     rr = 1 / (1 + np.exp(-rr))
                 final.update({i: float(r) for i, r in zip(pool, rr)})
                 if RERANK_ORDER:
                     pool = [i for _, i in sorted(zip(rr, pool), key=lambda t: -t[0])]
-            good = [i for i in pool if final[i] >= RERANK_MIN]
+            good = [i for i in pool if final[i] >= (RERANK_MIN if lv == "exact_model" else RERANK_MIN_FALLBACK)]
         else:
             good = [int(i) for i in order if scores[i] >= MIN_SCORE]
         manual = [i for i in good if not state["generic"][i]][: req.top_k]
