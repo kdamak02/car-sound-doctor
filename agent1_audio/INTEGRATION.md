@@ -40,7 +40,7 @@ flowchart LR
 
 | Setting | Value |
 |---|---|
-| Method / URL | `POST http://audio-service:8001/analyze` (inside Docker) or `http://localhost:8001/analyze` |
+| Method / URL | n8n in Docker + Agent 1 started with `start_agent1.ps1` (team setup): `POST http://host.docker.internal:8001/analyze`. Both in Docker compose: `http://audio-service:8001/analyze`. Outside Docker: `http://localhost:8001/analyze` |
 | Body | **Form-Data** |
 | field `file` | *n8n Binary File*: the binary from the Telegram download node. Send the OGG as is, no conversion needed |
 | field `context` | `idle`, `startup`, `braking`, `driving` or `unknown` |
@@ -111,6 +111,21 @@ The audio model only knows 12 classes; other faults are possible.
 
 ## 5. Run it
 
+**Team setup (no Docker for Agent 1), Windows PowerShell, from the repo root:**
+
+```powershell
+# 1. put agent1_ast.joblib and agent1_ae.pt in models\  (not in Git, ask group A)
+# 2. first run creates .venv-agent1 and installs torch CPU + transformers (~10 min)
+.\agent1_audio\start_agent1.ps1
+# 3. test in another window
+curl.exe http://localhost:8001/health          # {"status":"ok","mock":false}
+curl.exe -F "file=@some_engine_sound.wav" -F "context=idle" http://localhost:8001/analyze
+```
+First `/analyze` downloads AST (~350 MB) once. Then about 1-2 s per second of audio on CPU.
+The yellow warnings at start (symlinks, `UNEXPECTED classifier.*`, `HF_TOKEN`) are harmless.
+
+**With Docker compose:**
+
 ```bash
 # mock mode (default): returns contracts/examples/agent1_output.json
 docker compose up audio-service
@@ -131,7 +146,9 @@ Swagger UI to try it by hand: http://localhost:8001/docs
 | AST, clean audio | 0.717 | 78.8 % |
 | AST + context, clean audio | 0.739 | 80.3 % |
 | AST + context, Telegram-like Opus 16k (before augmentation) | 0.685 | — |
-| AST + context, Opus 16k after augmentation | see `results/ast_augment.json` | |
+| AST augmented (deployed), Opus 16k | 0.638 | 71.7 % |
+| **AST augmented + context, Opus 16k (deployed, Telegram case)** | **0.720** | — |
+| AST augmented + context, clean audio | 0.751 | — |
 
 Anomaly detection AUC (fault vs healthy): conv autoencoder **0.865**, MFCC + Isolation Forest
 0.822, AST + Isolation Forest 0.811.
@@ -139,3 +156,10 @@ Anomaly detection AUC (fault vs healthy): conv autoencoder **0.865**, MFCC + Iso
 Known limits: 12 classes only; few recordings for tappet and knock; labels from the datasets'
 authors and some YouTube owners (not all mechanics); startup sounds get higher anomaly scores
 than idle sounds even when healthy.
+
+## 7. Demo scenario that works end to end
+
+Agent 2's manuals do not cover belt noise (group B removed those cases). Use a case the manuals cover and
+Agent 1 knows: **starting problem / weak battery** (`dead_battery`, F1 0.74, context `startup`), e.g. the Clio case
+of `agent2_diagnosis/tests/cases/clio_starter_pass1.json`. Check the real Agent 1 output on the demo recording
+before the defense (label, confidence, anomaly score) and keep a backup recording.

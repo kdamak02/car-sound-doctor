@@ -1,0 +1,10 @@
+# Agent 1 service in REAL mode (FastAPI + model), without Docker.
+#   pip install -r agent1_audio/requirements-real.txt --extra-index-url https://download.pytorch.org/whl/cpu
+-r requirements.txt
+torch
+transformers>=4.44
+soundfile
+librosa>=0.10
+scikit-learn>=1.4
+joblib
+imageio-ffmpeg   # ffmpeg for Telegram OGG/Opus when it is not installed on the machine

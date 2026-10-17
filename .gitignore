@@ -32,6 +32,7 @@ n8n_data/
 __pycache__/
 *.pyc
 .venv/
+.venv-*/
 venv/
 .ipynb_checkpoints/
 .pytest_cache/
