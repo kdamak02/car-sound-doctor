@@ -208,8 +208,46 @@ if RESCUE_ON:  # empty agent answer -> one JSON-mode call with the passages the 
     connections["Rescue answer"] = link("Ground and decide")
     connections["Ollama JSON (rescue)"] = link("Rescue answer", "ai_languageModel")
 
+if os.getenv("AGENT1", "false").lower() == "true":  # second entry: voice note + case -> Agent 1 (/analyze) -> case.audio -> Agent 2
+    MERGE_AUDIO = (
+        "const body = $('Webhook (audio)').first().json.body || {};\n"
+        "const c = typeof body.case === 'string' ? JSON.parse(body.case) : body.case;\n"
+        "const a = $json;\n"
+        "// Agent 1 down or HTTP error: continue with the text only (the driver is told in the reply)\n"
+        "const failed = !a || a.error || !a.status;\n"
+        "if (failed) delete c.audio; else c.audio = a;\n"
+        "return { json: { body: c, unusable: !failed && a.status === 'unusable_audio', audio_failed: !!failed } };\n")
+    ASK_AGAIN = (
+        "const fr = (($json.body.user_input || {}).language || 'fr') !== 'en';\n"
+        "return { json: { needs_new_audio: true, message: fr ? 'Enregistrement inutilisable : refaites un enregistrement de 5 à 10 secondes près du moteur, sans parler.' : 'Unusable recording: please record 5 to 10 seconds close to the engine, without talking.' } };\n")
+    nodes += [
+        node("Webhook (audio)", "n8n-nodes-base.webhook", 2,
+             {"httpMethod": "POST", "path": "agent2-diagnose-audio", "responseMode": "lastNode", "options": {}}, [0, -260],
+             webhookId=uid("webhook-audio")),
+        node("Agent 1", "n8n-nodes-base.httpRequest", 4.2,
+             {"method": "POST", "url": os.getenv("AGENT1_URL", "http://host.docker.internal:8001/analyze"), "sendBody": True,
+              "contentType": "multipart-form-data",
+              "bodyParameters": {"parameters": [
+                  {"parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "audio"},
+                  {"name": "context", "value": "={{ (JSON.parse($json.body.case).symptom || {}).context || 'unknown' }}"}]},
+              "options": {"timeout": 30000}}, [260, -260], onError="continueRegularOutput", retryOnFail=True, maxTries=2),
+        code("Merge audio", MERGE_AUDIO, [520, -260]),
+        node("Audio usable?", "n8n-nodes-base.if", 2.2,
+             {"conditions": {"options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                             "conditions": [{"id": uid("cond-audio"), "leftValue": "={{ $json.unusable }}",
+                                             "rightValue": "", "operator": {"type": "boolean", "operation": "false", "singleValue": True}}],
+                             "combinator": "and"}, "options": {}}, [780, -260]),
+        code("Ask for a new recording", ASK_AGAIN, [1040, -360]),
+    ]
+    connections["Webhook (audio)"] = link("Agent 1")
+    connections["Agent 1"] = link("Merge audio")
+    connections["Merge audio"] = link("Audio usable?")
+    connections["Audio usable?"] = {"main": [[{"node": "Prepare input", "type": "main", "index": 0}],
+                                             [{"node": "Ask for a new recording", "type": "main", "index": 0}]]}
+
 if os.getenv("AGENT3", "false").lower() == "true":  # hand the final answer to Agent 3 (repair guide); reply = {agent2, agent3}
     TO_A3 = (src("agent2_to_agent3.js") + "\nlet c;\ntry { c = $('Webhook').first().json.body; } catch (e) { c = null; }\n"
+             "if (!c) { try { c = $('Merge audio').first().json.body; } catch (e) { c = null; } }\n"
              "if (!c) c = $('When called by main workflow').first().json;\n"
              "return { json: { case_record: toAgent3(c, $json), agent2: $json } };\n")
     nodes += [
