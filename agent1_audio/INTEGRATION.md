@@ -114,7 +114,7 @@ The audio model only knows 12 classes; other faults are possible.
 **Team setup (no Docker for Agent 1), Windows PowerShell, from the repo root:**
 
 ```powershell
-# 1. put agent1_ast.joblib and agent1_ae.pt in models\  (not in Git, ask group A)
+# 1. models\agent1_ast.joblib and models\agent1_ae.pt come with git pull (7 MB, force-added)
 # 2. first run creates .venv-agent1 and installs torch CPU + transformers (~10 min)
 .\agent1_audio\start_agent1.ps1
 # 3. test in another window

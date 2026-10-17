@@ -1,13 +1,13 @@
 # Start Agent 1 (audio service) in real mode on port 8001, without Docker.
 # Run from the repository root in PowerShell:   .\agent1_audio\start_agent1.ps1
 # First time only: it creates .venv-agent1 and installs the packages (about 10 minutes).
-# Needs models\agent1_ast.joblib and models\agent1_ae.pt (not in Git, ask group A).
+# Needs models\agent1_ast.joblib and models\agent1_ae.pt (in Git, come with git pull).
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 foreach ($m in "models\agent1_ast.joblib", "models\agent1_ae.pt") {
-    if (-not (Test-Path $m)) { Write-Error "Missing $m : ask group A for the model files." }
+    if (-not (Test-Path $m)) { Write-Error "Missing $m : run git pull (or ask group A)." }
 }
 if (-not (Test-Path ".venv-agent1")) {
     python -m venv .venv-agent1
