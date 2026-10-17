@@ -59,7 +59,7 @@ Cases that the manuals cover (`agent2_diagnosis/tests/cases/README.md`): Clio st
 ## 4. Measured results (use them in the report; they come from small samples)
 
 - Retrieval, 30 queries (`rag/eval/queries.jsonl`, written by one person): chunking by heading beats fixed windows; BM25 + dense beats dense; hit rate 0.846 (0.923 without the reranker and with the `maintenance` section); the bge-reranker rejects 4 of 4 out-of-corpus queries (1 of 4 without). Details and tables: `agent2_diagnosis/tests/eval_results.md`.
-- Runs through n8n: Ollama 7B 37-69 s (reranker on CPU can make it 2-4 min), Groq `gpt-oss-120b` 8 of 8 usable on the four covered cases (power steering excluded: 0 of 2) until its daily budget ran out, `gpt-oss-20b` 5 of 10 (power steering excluded). Full chain on Ollama: pass 1 about 35-50 s, pass 2 about 52-59 s, Agent 3 valid in 2 of 2 tries.
+- Runs through n8n: Ollama 7B 37-69 s (reranker on CPU can make it 2-4 min), Groq `gpt-oss-120b` 8 of 8 usable on the four covered cases (power steering excluded: 0 of 2) until its daily budget ran out, `gpt-oss-20b` 4 of 8 (power steering excluded). Full chain on Ollama: pass 1 about 35-50 s, pass 2 about 52-59 s, Agent 3 valid in 2 of 2 tries.
 - Prompt changes P4/P5 v2.4 and v2.5 with before/after: `prompts/` (Versions tables).
 
 ## 5. Known problems, most important first
