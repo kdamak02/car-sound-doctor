@@ -1,0 +1,626 @@
+{
+  "name": "Car Sound Doctor - full chain (Agent 1 + 2 + 3, Gemini)",
+  "nodes": [
+    {
+      "id": "5a3347f5-b634-509b-9cfd-b382751dc28e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent2-diagnose",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "969fff34-2a2d-5a76-a19f-161d2836ae59"
+    },
+    {
+      "id": "b20979ce-155c-5ef2-a0a6-417972bf8b92",
+      "name": "When called by main workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "4ba4bc05-ab68-5df8-a7e7-602d3c9387f0",
+      "name": "Prepare input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const P3 = \"AUDIO ANALYSIS (automatic, may be wrong):\\n- Most likely sound class: {{label_name}} (probability {{prob}}, confidence {{confidence}}).\\n- Other possibilities: {{others}}.\\n- Unusualness compared with healthy engines: {{unusualness}}.\\n- Measured facts: {{summary}}\\n- Warnings: {{warnings}}\\n- Reading guide: {{reading}}\\nTreat this as a hypothesis to verify with the driver's checks, never as a diagnosis.\\nThe audio model only knows a limited set of sound classes: other faults are possible.\";\nconst SYSTEM = {\"1\": \"You are a car diagnostic assistant helping a driver who is not a mechanic.\\nYou receive: the vehicle, the driver's description and an automatic analysis of the engine sound.\\nManual passages come from the rag_search tool when you have it (call it once), or are listed in the message with their chunk_id in square brackets,\\nfor example [peugeot208_fr_p142_c3]. Never use knowledge that is not in a passage.\\n\\nTask: rank the 2 to 5 most likely causes, then ask 3 to 5 checks the driver can do WITHOUT tools to tell\\nthe causes apart.\\n\\nRules:\\n- Use ONLY the passages for facts. Every cause and every check must cite passage ids, copied exactly.\\n- The sound analysis is a hint, not a fact. If its confidence is low, say so in the evidence.\\n- A cause \\\"label\\\" must be one of the label ids given to you, or null.\\n- Each check: one short question answerable in one message; \\\"answer_type\\\" is yes_no, choice or free_text\\n  (give \\\"choices\\\" for choice). Never ask for a check that requires driving when brakes, steering or\\n  overheating are involved.\\n- Do not ask for something the driver already told you.\\n- If the passages do not support any cause, return {\\\"causes\\\": [], \\\"checks\\\": []}. Do not guess.\\n- If the retrieval level is not exact_model, say in message_to_user that the answer uses general\\n  information, not this exact model.\\n- Order causes from the most to the least likely.\\n- message_to_user is the advice for the driver, in this order: (1) for the MOST likely cause, one concrete action the\\n  passages describe, with the page in brackets, for example (p. 225); (2) then at most two short lines for the less likely\\n  causes, each starting with the cause name and its own action; (3) if a less likely cause involves brakes, steering,\\n  overheating or oil pressure, one sentence telling the driver to be careful until it is ruled out. Use only actions that a\\n  passage describes; if no passage gives an action, say to have it checked at a garage. Do not give repair steps (another\\n  agent does that). If you ask checks, end with a sentence asking the driver to answer them.\\n- \\\"name\\\" is a short readable phrase in the driver's language, never a label id or a chunk id. Each \\\"evidence\\\" line is a\\n  short fact from a passage or a quote of the driver, not an id.\\n- The audio analysis ends with a \\\"Reading guide\\\" line: follow it (for example, when the sound is probably healthy, ask\\n  whether the noise is intermittent instead of assuming a fault).\\n- Write name, q, why and message_to_user in the driver's language.\\n\\nAnswer with JSON only:\\n{\\\"causes\\\": [{\\\"name\\\": str, \\\"label\\\": str|null, \\\"prob\\\": float,\\n             \\\"evidence\\\": [str], \\\"sources\\\": [\\\"chunk_id\\\"]}],\\n \\\"checks\\\": [{\\\"q\\\": str, \\\"why\\\": str, \\\"answer_type\\\": \\\"yes_no|choice|free_text\\\",\\n             \\\"choices\\\": [str], \\\"source\\\": \\\"chunk_id\\\"}],\\n \\\"message_to_user\\\": str}\\nProbabilities across causes sum to 1.\\n\\nHow to work when you have the rag_search tool:\\n1. Call it ONCE. The query is ONE full sentence in the driver's own words (for example: le d\\u00e9marreur ne tourne pas, j'entends un clic), not a list of keywords.\\n2. When you receive the passages, STOP calling tools and write the final answer.\\n3. The final answer is ONLY the JSON object described above: no sentence before or after it, no markdown.\\nCopy every chunk_id exactly as it appears in the passages.\", \"2\": \"You are a car diagnostic assistant helping a driver who is not a mechanic.\\nYou receive: the previous ranked causes, the checks that were asked with the driver's answers, the vehicle\\nand the sound analysis. Manual passages come from the rag_search tool when you have it (search again with\\nthe driver's answers in the query), or are listed in the message with their chunk_id in square brackets.\\nNever use knowledge that is not in a passage.\\n\\nTask: update the probability of every cause using the answers, and add a new cause when an answer points\\nto something that is not in the list yet (for example \\\"oil below the minimum mark\\\" points to low oil).\\n\\nRules:\\n- Use ONLY the passages for facts. Every cause cites passage ids, copied exactly.\\n- If an answer contradicts a cause, lower it and say why in its evidence. Quote the answer.\\n- An answer the driver could not give (\\\"je ne sais pas\\\") is not evidence for or against a cause.\\n- A cause \\\"label\\\" must be one of the label ids given to you, or null.\\n- If the answers still do not separate the top causes and new checks are allowed, ask up to 3 new checks\\n  (do not repeat an earlier check). If new checks are not allowed, return \\\"checks\\\": [].\\n- If the retrieval level is not exact_model, say so in message_to_user.\\n- Order causes from the most to the least likely.\\n- message_to_user is the advice for the driver, in this order: (1) for the MOST likely cause, one concrete action the\\n  passages describe, with the page in brackets, for example (p. 225); (2) then at most two short lines for the less likely\\n  causes, each starting with the cause name and its own action; (3) if a less likely cause involves brakes, steering,\\n  overheating or oil pressure, one sentence telling the driver to be careful until it is ruled out. Use only actions that a\\n  passage describes; if no passage gives an action, say to have it checked at a garage. Do not give repair steps (another\\n  agent does that). If you ask checks, end with a sentence asking the driver to answer them.\\n- \\\"name\\\" is a short readable phrase in the driver's language, never a label id or a chunk id. Each \\\"evidence\\\" line is a\\n  short fact from a passage or a quote of the driver, not an id.\\n- The audio analysis ends with a \\\"Reading guide\\\" line: follow it (for example, when the sound is probably healthy, ask\\n  whether the noise is intermittent instead of assuming a fault).\\n- For EVERY earlier cause give a \\\"status\\\" that says what the driver's answers did to it:\\n  \\\"confirmed\\\" (an answer supports it), \\\"contradicted\\\" (an answer shows it is not the cause), or \\\"not_tested\\\" (no answer concerns it).\\n  A contradicted cause keeps a very low probability and its evidence line quotes the answer.\\n- Write name, q, why and message_to_user in the driver's language.\\n\\nExample for one earlier cause:\\nEarlier cause: \\\"Cosses de batterie oxyd\\u00e9es\\\", 0.30. The driver answered: \\\"les cosses sont propres et serr\\u00e9es\\\".\\n-> {\\\"name\\\": \\\"Cosses de batterie oxyd\\u00e9es\\\", \\\"label\\\": null, \\\"prob\\\": 0.05, \\\"status\\\": \\\"contradicted\\\",\\n    \\\"evidence\\\": [\\\"le conducteur dit que les cosses sont propres et serr\\u00e9es\\\"], \\\"sources\\\": [\\\"<chunk_id>\\\"]}\\n\\nAnswer with JSON only:\\n{\\\"causes\\\": [{\\\"name\\\": str, \\\"label\\\": str|null, \\\"prob\\\": float, \\\"status\\\": \\\"confirmed|contradicted|not_tested\\\",\\n             \\\"evidence\\\": [str], \\\"sources\\\": [\\\"chunk_id\\\"]}],\\n \\\"checks\\\": [{\\\"q\\\": str, \\\"why\\\": str, \\\"answer_type\\\": \\\"yes_no|choice|free_text\\\",\\n             \\\"choices\\\": [str], \\\"source\\\": \\\"chunk_id\\\"}],\\n \\\"message_to_user\\\": str}\\nProbabilities across causes sum to 1.\\n\\nHow to work when you have the rag_search tool:\\n1. Call it ONCE. The query is ONE full sentence in the driver's own words (for example: le d\\u00e9marreur ne tourne pas, j'entends un clic), not a list of keywords.\\n2. When you receive the passages, STOP calling tools and write the final answer.\\n3. The final answer is ONLY the JSON object described above: no sentence before or after it, no markdown.\\nCopy every chunk_id exactly as it appears in the passages.\"};\nconst LABELS = {\"_comment\": \"Single source of truth for fault labels. Group A owns this file. A label is TRAINED by Agent 1 only if it has at least min_recordings distinct recordings (checked by agent1_audio/src/prepare_data.py); otherwise it is a hypothesis that only Agent 2 may propose and confirm with checks. Change by PR only.\", \"version\": \"0.2.0\", \"min_recordings\": 8, \"contexts\": [\"idle\", \"startup\", \"braking\", \"driving\", \"unknown\"], \"labels\": [{\"id\": \"normal\", \"context\": \"idle\", \"fr\": \"Moteur normal\", \"en\": \"Normal engine\"}, {\"id\": \"belt\", \"context\": \"idle\", \"fr\": \"Courroie qui siffle\", \"en\": \"Squealing belt\"}, {\"id\": \"misfire\", \"context\": \"idle\", \"fr\": \"Raté d'allumage\", \"en\": \"Misfire / rough idle\"}, {\"id\": \"power_steering\", \"context\": \"idle\", \"fr\": \"Pompe de direction assistée\", \"en\": \"Power steering pump\"}, {\"id\": \"low_oil\", \"context\": \"idle\", \"fr\": \"Manque d'huile\", \"en\": \"Low oil\"}, {\"id\": \"tappet\", \"context\": \"idle\", \"fr\": \"Claquement de poussoirs\", \"en\": \"Tappet / lifter tick\"}, {\"id\": \"knock\", \"context\": \"idle\", \"fr\": \"Cliquetis / bruit de bielle\", \"en\": \"Engine / rod knock\"}, {\"id\": \"exhaust_leak\", \"context\": \"idle\", \"fr\": \"Fuite d'échappement\", \"en\": \"Exhaust leak\"}, {\"id\": \"vacuum_leak\", \"context\": \"idle\", \"fr\": \"Prise d'air\", \"en\": \"Vacuum leak\"}, {\"id\": \"alternator\", \"context\": \"idle\", \"fr\": \"Alternateur\", \"en\": \"Alternator whine / bearing\"}, {\"id\": \"diesel_injector\", \"context\": \"idle\", \"fr\": \"Injecteur diesel\", \"en\": \"Diesel injector knock\"}, {\"id\": \"normal_brakes\", \"context\": \"braking\", \"fr\": \"Freins normaux\", \"en\": \"Normal brakes\"}, {\"id\": \"worn_brakes\", \"context\": \"braking\", \"fr\": \"Freins usés\", \"en\": \"Worn brakes\"}, {\"id\": \"normal_startup\", \"context\": \"startup\", \"fr\": \"Démarrage normal\", \"en\": \"Normal startup\"}, {\"id\": \"dead_battery\", \"context\": \"startup\", \"fr\": \"Batterie faible\", \"en\": \"Weak / dead battery\"}, {\"id\": \"bad_ignition\", \"context\": \"startup\", \"fr\": \"Allumage défaillant\", \"en\": \"Bad ignition\"}, {\"id\": \"starter_click\", \"context\": \"startup\", \"fr\": \"Démarreur qui claque\", \"en\": \"Starter clicking\"}, {\"id\": \"timing_chain\", \"context\": \"startup\", \"fr\": \"Chaîne de distribution\", \"en\": \"Timing chain rattle\"}, {\"id\": \"turbo\", \"context\": \"driving\", \"fr\": \"Turbo\", \"en\": \"Turbo whistle / failure\"}, {\"id\": \"wheel_bearing\", \"context\": \"driving\", \"fr\": \"Roulement de roue\", \"en\": \"Wheel bearing\"}, {\"id\": \"cv_joint\", \"context\": \"driving\", \"fr\": \"Cardan\", \"en\": \"CV joint\"}, {\"id\": \"transmission\", \"context\": \"driving\", \"fr\": \"Boîte de vitesses\", \"en\": \"Transmission\"}, {\"id\": \"suspension\", \"context\": \"driving\", \"fr\": \"Suspension\", \"en\": \"Suspension clunk\"}], \"hypotheses_only\": {\"ids\": [\"exhaust_leak\", \"vacuum_leak\", \"alternator\", \"diesel_injector\", \"starter_click\", \"timing_chain\", \"turbo\", \"wheel_bearing\", \"cv_joint\", \"transmission\", \"suspension\"]}};\n\n// Agent 2, node \"Prepare input\" (Code node source). Owner: B2. Port of agent2_diagnosis/agent2.py (describe_audio,\n// user_message). The build script agent2_diagnosis/build_workflow.py wraps this function into the n8n Code node\n// and embeds P3, P4, P5 (prompts/*.md) and contracts/labels.json. Test: node n8n/code_nodes/test_agent2_nodes.js\n//\n// prepare(c, P3, SYSTEM, LABELS)\n//   c      : case record (contracts/case_record.schema.json); c.audio is the Agent 1 output\n//   P3     : audio text template; SYSTEM : {1: P4 text, 2: P5 text}\n// returns  : { case, ctx, system_prompt, user_message, filters_json }\n\nfunction prepare(c, P3, SYSTEM, LABELS, mode) {  // mode: 'tool' (default) or 'prefetch' (passages are added later by \"Retrieve passages\")\n  const MAX_ROUNDS = 2;\n  const labelEn = Object.fromEntries(LABELS.labels.map((l) => [l.id, l.en]));\n  const labelNames = Object.fromEntries(LABELS.labels.map((l) => [l.id, l]));\n  const known = [...new Set([...Object.keys(labelEn), ...LABELS.hypotheses_only.ids])].sort();\n  const n = (c.round || 0) + 1; // pass number = check rounds answered + 1\n  const allowNew = n <= MAX_ROUNDS;\n  const diagnosis = c.diagnosis || [];\n  const lang = (c.user_input && c.user_input.language) || 'unknown';\n\n  const a = c.audio;\n  let audioText = \"No usable audio: rely on the user's description only.\";\n  if (a && a.status === 'ok') {\n    const top = a.top3 || [];\n    const score = a.anomaly_score;\n    const pct = (p) => Math.round(p * 100) + ' %';\n    const name = (l) => (labelNames[l] ? labelNames[l][lang] || labelNames[l].en : l);\n    // anomaly_score is a percentile against HEALTHY engines (0.5 = typical healthy sound), see Agent 1's INTEGRATION.md\n    const unusualness = score == null ? 'unknown' : score >= 0.95 ? 'very high' : score >= 0.8 ? 'high' : 'normal range';\n    // decision table of Agent 1's guide, computed here so a small model does not have to infer it\n    const normal = String(a.label || '').startsWith('normal');\n    const lines = [];\n    if (a.confidence === 'low') lines.push(\"The audio is not conclusive: rely on the driver's description and on the checks more than on the sound.\");\n    if (score != null && !normal && score >= 0.8) lines.push('The sound class and the anomaly score agree: start from the most likely classes.');\n    if (score != null && normal && score < 0.8) lines.push('The engine probably sounds healthy: ask whether the noise is intermittent and suggest recording again when it happens.');\n    if (score != null && normal && score >= 0.95) {\n      lines.push('Very unusual sound outside the classes the audio model knows: also consider these faults and separate them with checks: ' +\n        LABELS.hypotheses_only.ids.map((i) => i.replace(/_/g, ' ')).join(', ') + '.');\n    }\n    const vars = {\n      label_name: name(a.label),\n      prob: top.length ? pct(top[0].prob) : 'n/a',\n      others: top.slice(1).map((t) => name(t.label) + ' (' + pct(t.prob) + ')').join(', ') || 'none',\n      confidence: a.confidence,\n      unusualness,\n      summary: (a.description && a.description.summary) || '',\n      warnings: (a.warnings || []).join('; ') || 'none',\n      reading: lines.join(' ') || 'none',\n    };\n    audioText = P3.replace(/\\{\\{(\\w+)\\}\\}/g, (m, k) => (k in vars ? String(vars[k]) : m));\n  }\n\n  const parts = [\n    'Vehicle: ' + JSON.stringify(c.vehicle || {}),\n    \"Driver's description: \" + ((c.symptom && c.symptom.description) || ''),\n    \"Driver's language: \" + lang,\n    audioText,\n    'Label ids you may use: ' + JSON.stringify(known),\n  ];\n  if (diagnosis.length) {\n    const answers = Object.fromEntries((c.check_answers || []).map((x) => [x.check_id, x.answer]));\n    const asked = diagnosis.flatMap((d) => d.checks).map((k) => `${k.id}: ${k.q} -> ${answers[k.id] || '(no answer)'}`);\n    parts.push(\n      'Previous causes: ' + JSON.stringify(diagnosis[diagnosis.length - 1].causes),\n      'Checks asked and answers:\\n' + asked.join('\\n'),\n      'New checks allowed: ' + (allowNew ? 'yes' : 'no')\n    );\n  }\n  if (mode !== 'prefetch') parts.push('Use the rag_search tool to get the manual passages. Cite chunk_id values exactly as returned.');\n\n  // search queries (port of queries() in agent2.py): symptom + sound label, the label alone, symptom + the driver's answers\n  const label = labelEn[(a && a.label) || ''] || '';\n  const symptom = (c.symptom && c.symptom.description) || '';\n  const answered = (c.check_answers || []).map((x) => x.answer).join(' ');\n  const said = (c.user_input && c.user_input.text) || ''; // the driver's own sentence first: the reranker scores full sentences far better than keywords\n  const queries = [...new Set([said, `${symptom} ${label}`, label ? `${label} causes` : '', answered ? `${symptom} ${answered}` : ''].map((q) => q.trim()).filter(Boolean))];\n\n  const v = c.vehicle || {};\n  const filters = { section: ['symptoms', 'causes', 'codes', 'maintenance'] };\n  for (const k of ['make', 'model', 'year']) if (v[k]) filters[k] = v[k];\n\n  return {\n    case: c,\n    ctx: { n, allow_new: allowNew, asked: diagnosis.reduce((s, d) => s + d.checks.length, 0), language: lang },\n    system_prompt: SYSTEM[n === 1 ? 1 : 2],\n    user_message: parts.join('\\n'),\n    filters_json: JSON.stringify(filters),\n    queries,\n  };\n}\n\nreturn { json: prepare($json.body || $json, P3, SYSTEM, LABELS, 'tool') };\n"
+      }
+    },
+    {
+      "id": "ae6e5b34-3fa5-51f1-aab5-b59de1a90e63",
+      "name": "Agent 2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        520,
+        100
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "hasOutputParser": false,
+        "options": {
+          "systemMessage": "={{ $json.system_prompt }}",
+          "maxIterations": 4,
+          "returnIntermediateSteps": true
+        }
+      }
+    },
+    {
+      "id": "bb95fa9a-98d0-5430-84eb-13c88da3c993",
+      "name": "Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        440,
+        340
+      ],
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "6cec361a-1ce1-5e79-9e79-f64408e4fa0e",
+      "name": "rag_search",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        340
+      ],
+      "parameters": {
+        "toolDescription": "Search the car manuals and OBD-II code database. Input: query = one full sentence in the driver's own words (the symptom, the likely fault, or the driver's answers). Returns passages, each with chunk_id, text, source, page, score, and fallback_level. Vehicle filters are added automatically.",
+        "method": "POST",
+        "url": "http://host.docker.internal:8002/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{query}\",\n  \"filters\": {{ $('Prepare input').first().json.filters_json }},\n  \"top_k\": 5,\n  \"rerank\": true\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "search text, in the driver's language or in English",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6b15755d-6e84-514e-b7ad-0e0d3c9c1b1c",
+      "name": "Ground and decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const SUPPORT = true;\nconst LABELS = {\"_comment\": \"Single source of truth for fault labels. Group A owns this file. A label is TRAINED by Agent 1 only if it has at least min_recordings distinct recordings (checked by agent1_audio/src/prepare_data.py); otherwise it is a hypothesis that only Agent 2 may propose and confirm with checks. Change by PR only.\", \"version\": \"0.2.0\", \"min_recordings\": 8, \"contexts\": [\"idle\", \"startup\", \"braking\", \"driving\", \"unknown\"], \"labels\": [{\"id\": \"normal\", \"context\": \"idle\", \"fr\": \"Moteur normal\", \"en\": \"Normal engine\"}, {\"id\": \"belt\", \"context\": \"idle\", \"fr\": \"Courroie qui siffle\", \"en\": \"Squealing belt\"}, {\"id\": \"misfire\", \"context\": \"idle\", \"fr\": \"Raté d'allumage\", \"en\": \"Misfire / rough idle\"}, {\"id\": \"power_steering\", \"context\": \"idle\", \"fr\": \"Pompe de direction assistée\", \"en\": \"Power steering pump\"}, {\"id\": \"low_oil\", \"context\": \"idle\", \"fr\": \"Manque d'huile\", \"en\": \"Low oil\"}, {\"id\": \"tappet\", \"context\": \"idle\", \"fr\": \"Claquement de poussoirs\", \"en\": \"Tappet / lifter tick\"}, {\"id\": \"knock\", \"context\": \"idle\", \"fr\": \"Cliquetis / bruit de bielle\", \"en\": \"Engine / rod knock\"}, {\"id\": \"exhaust_leak\", \"context\": \"idle\", \"fr\": \"Fuite d'échappement\", \"en\": \"Exhaust leak\"}, {\"id\": \"vacuum_leak\", \"context\": \"idle\", \"fr\": \"Prise d'air\", \"en\": \"Vacuum leak\"}, {\"id\": \"alternator\", \"context\": \"idle\", \"fr\": \"Alternateur\", \"en\": \"Alternator whine / bearing\"}, {\"id\": \"diesel_injector\", \"context\": \"idle\", \"fr\": \"Injecteur diesel\", \"en\": \"Diesel injector knock\"}, {\"id\": \"normal_brakes\", \"context\": \"braking\", \"fr\": \"Freins normaux\", \"en\": \"Normal brakes\"}, {\"id\": \"worn_brakes\", \"context\": \"braking\", \"fr\": \"Freins usés\", \"en\": \"Worn brakes\"}, {\"id\": \"normal_startup\", \"context\": \"startup\", \"fr\": \"Démarrage normal\", \"en\": \"Normal startup\"}, {\"id\": \"dead_battery\", \"context\": \"startup\", \"fr\": \"Batterie faible\", \"en\": \"Weak / dead battery\"}, {\"id\": \"bad_ignition\", \"context\": \"startup\", \"fr\": \"Allumage défaillant\", \"en\": \"Bad ignition\"}, {\"id\": \"starter_click\", \"context\": \"startup\", \"fr\": \"Démarreur qui claque\", \"en\": \"Starter clicking\"}, {\"id\": \"timing_chain\", \"context\": \"startup\", \"fr\": \"Chaîne de distribution\", \"en\": \"Timing chain rattle\"}, {\"id\": \"turbo\", \"context\": \"driving\", \"fr\": \"Turbo\", \"en\": \"Turbo whistle / failure\"}, {\"id\": \"wheel_bearing\", \"context\": \"driving\", \"fr\": \"Roulement de roue\", \"en\": \"Wheel bearing\"}, {\"id\": \"cv_joint\", \"context\": \"driving\", \"fr\": \"Cardan\", \"en\": \"CV joint\"}, {\"id\": \"transmission\", \"context\": \"driving\", \"fr\": \"Boîte de vitesses\", \"en\": \"Transmission\"}, {\"id\": \"suspension\", \"context\": \"driving\", \"fr\": \"Suspension\", \"en\": \"Suspension clunk\"}], \"hypotheses_only\": {\"ids\": [\"exhaust_leak\", \"vacuum_leak\", \"alternator\", \"diesel_injector\", \"starter_click\", \"timing_chain\", \"turbo\", \"wheel_bearing\", \"cv_joint\", \"transmission\", \"suspension\"]}};\n\n// Agent 2, node \"Ground and decide\" (Code node source). Owner: B2. Port of agent2_diagnosis/agent2.py\n// (build_causes, build_checks, is_conclusive, safety_stop). Wrapped by agent2_diagnosis/build_workflow.py.\n// Test: node n8n/code_nodes/test_agent2_nodes.js\n//\n// postprocess(ctx, agentOut, LABELS)\n//   ctx      : ctx from \"Prepare input\" ({n, allow_new, asked, language})\n//   agentOut : output of the AI Agent node: {output: \"<LLM text>\", intermediateSteps: [{observation}]}\n// returns    : item for validate_output.js: {agent, output (agent2_output or null), retrieved, insufficient, reason}\n// Rules: only passages that /search returned count; uncited causes and checks are dropped; conclusive, safety_stop,\n// label validity and check ids are decided here, not by the LLM.\n\nfunction postprocess(ctx, agentOut, LABELS) {\n  const LEVELS = ['exact_model', 'make', 'generic', 'none'];\n  const SAFETY = /frein|brake|direction|steering|surchauffe|overheat|temp[ée]rature|oil pressure|pression d.huile/i;\n  const CONCLUSIVE_PROB = 0.6, CONCLUSIVE_GAP = 0.2;\n  const DEFAULT_MESSAGE = { fr: 'Pour confirmer, répondez à ces questions :', en: 'To confirm, please answer these questions:' };\n  // LLMs add spaces, brackets or quotes around ids: ' [clio4ph1fr_p225_c1]' -> 'clio4ph1fr_p225_c1'\n  const cleanId = (x) => String(x == null ? '' : x).replace(/^[\\s\\[('\"]+|[\\s\\])'\",.;]+$/g, '');\n  // small models sometimes answer with a machine id ('dead_battery') as the cause name: show the label's name instead\n  const labelNames = Object.fromEntries(LABELS.labels.map((l) => [l.id, l]));\n  const readable = (name, label) => {\n    if (!(name in labelNames) && !/^[A-Za-z0-9]+(_[A-Za-z0-9]+)+$/.test(name)) return name; // exactly a label id, or looks like an id\n    const l = labelNames[name] || labelNames[label];\n    return l ? l[ctx.language] || l.en : name.replace(/_/g, ' ');\n  };\n  const known = new Set([...LABELS.labels.map((l) => l.id), ...LABELS.hypotheses_only.ids]);\n\n  // 1. the passages the agent really retrieved (tool results)\n  const byId = {};\n  let level = 'exact_model';\n  for (const step of agentOut.intermediateSteps || []) {\n    let obs = step.observation;\n    if (typeof obs === 'string') {\n      try { obs = JSON.parse(obs); } catch (e) { continue; }\n    }\n    if (!obs || !Array.isArray(obs.passages)) continue;\n    for (const p of obs.passages) byId[p.chunk_id] = p;\n    if (LEVELS.indexOf(obs.fallback_level) > LEVELS.indexOf(level)) level = obs.fallback_level;\n  }\n  const retrieved = Object.keys(byId);\n  const fail = (reason) => ({ agent: 'agent2_output', output: null, retrieved, insufficient: true, reason });\n  if (!retrieved.length) return fail('no manual passages retrieved');\n\n  // 2. the LLM answer\n  let raw = agentOut.output;\n  if (typeof raw === 'string') {\n    const m = raw.match(/\\{[\\s\\S]*\\}/);\n    try { raw = m ? JSON.parse(m[0]) : {}; } catch (e) { raw = {}; }\n  }\n  raw = raw || {};\n\n  // 3. grounded causes\n  let causes = [];\n  for (const c of raw.causes || []) {\n    const ids = (c.sources || []).map(cleanId).filter((s) => byId[s]);\n    if (!ids.length || !c.name) continue;\n    let prob = Math.max(Number(c.prob) || 0, 0);\n    if (String(c.status || '').toLowerCase() === 'contradicted') prob = Math.min(prob, 0.05); // P5: an answer shows it is not the cause\n    const label = known.has(c.label) ? c.label : null;\n    causes.push({\n      name: readable(String(c.name).trim(), label),\n      label,\n      prob,\n      evidence: (c.evidence || []).map(String).concat(ids.map((i) => 'passage ' + i)),\n    });\n  }\n  causes = causes.sort((a, b) => b.prob - a.prob).slice(0, 5);\n  if (!causes.length) return fail('the passages support no cause (or the model cited none)');\n  const total = causes.reduce((s, c) => s + c.prob, 0) || 1;\n  causes.forEach((c) => { c.prob = Math.round((c.prob / total) * 1000) / 1000; });\n\n  // 4. grounded checks\n  let checks = [];\n  if (ctx.allow_new) {\n    for (const c of raw.checks || []) {\n      const p = byId[cleanId(c.source)];\n      if (!p || !c.q || checks.length >= 5) continue;\n      let kind = ['yes_no', 'choice', 'free_text'].includes(c.answer_type) ? c.answer_type : 'yes_no';\n      const choices = (c.choices || []).map(String);\n      if (kind === 'choice' && !choices.length) kind = 'free_text';\n      const chk = {\n        id: 'c' + (ctx.asked + checks.length + 1),\n        q: c.q,\n        why: c.why || '',\n        answer_type: kind,\n        citation: { chunk_id: p.chunk_id, source: p.source, page: p.page === undefined ? null : p.page, verified: true },\n      };\n      if (kind === 'choice') chk.choices = choices;\n      checks.push(chk);\n    }\n  }\n\n  // 5. decisions\n  const second = causes.length > 1 ? causes[1].prob : 0;\n  const isConclusive = causes[0].prob >= CONCLUSIVE_PROB && causes[0].prob - second >= CONCLUSIVE_GAP;\n  const conclusive = ctx.n === 1 && checks.length ? false : isConclusive;\n  if (conclusive) checks = [];\n  const top = causes[0];\n  const message = typeof raw.message_to_user === 'string' ? raw.message_to_user : '';\n  const output = {\n    pass: ctx.n,\n    causes,\n    checks,\n    conclusive,\n    message_to_user: message || (checks.length ? DEFAULT_MESSAGE[ctx.language] || DEFAULT_MESSAGE.en : ''),\n    // most likely cause decides; less likely risky causes are covered by the caution sentence the prompt asks for\n    safety_stop: SAFETY.test(top.name + ' ' + (top.label || '')) || top.label === 'worn_brakes',\n  };\n  return { agent: 'agent2_output', output, retrieved, insufficient: false, reason: null, fallback_level: level };\n}\n\n// supportFilter(agentOut, search, filters, top)  [async, run just before postprocess]\n// A citation that exists is not a citation that supports: for the `top` likeliest causes, search the cause's own name\n// (the service reranks and drops weak passages) and keep the cause only if one of its cited passages comes back.\n// Port of supported_causes() in agent2_diagnosis/agent2.py. Returns agentOut with `output` replaced by the filtered answer.\nasync function supportFilter(agentOut, search, filters, top, hint) {\n  const cleanId = (x) => String(x == null ? '' : x).replace(/^[\\s\\[('\"]+|[\\s\\])'\",.;]+$/g, '');\n  const have = new Set();\n  for (const step of agentOut.intermediateSteps || []) {\n    let obs = step.observation;\n    if (typeof obs === 'string') {\n      try { obs = JSON.parse(obs); } catch (e) { continue; }\n    }\n    for (const p of (obs && obs.passages) || []) have.add(p.chunk_id);\n  }\n  let raw = agentOut.output;\n  if (typeof raw === 'string') {\n    const m = raw.match(/\\{[\\s\\S]*\\}/);\n    try { raw = m ? JSON.parse(m[0]) : null; } catch (e) { raw = null; }\n  }\n  if (!raw || !Array.isArray(raw.causes)) return agentOut;\n  const ranked = [...raw.causes].sort((a, b) => (Number(b.prob) || 0) - (Number(a.prob) || 0));\n  const keep = [];\n  for (let n = 0; n < ranked.length; n++) {\n    const c = ranked[n];\n    const ids = (c.sources || []).map(cleanId).filter((i) => have.has(i));\n    if (n < (top || 3) && ids.length && c.name) {\n      const res = await search((String(c.name) + ' ' + (hint || '')).trim(), filters, 8); // a bare cause name only matches code tables\n      const back = new Set((res.passages || []).map((p) => p.chunk_id));\n      if (!ids.some((i) => back.has(i))) continue; // cited passages do not talk about this cause\n    }\n    keep.push(c);\n  }\n  return { ...agentOut, output: { ...raw, causes: keep } };\n}\n\nconst ctx = $('Prepare input').first().json.ctx;\nconst search = (query, filters, top_k) => this.helpers.httpRequest({\n  method: 'POST', url: \"http://host.docker.internal:8002/search\", body: { query, filters, top_k, rerank: true }, json: true });\nconst answer = { output: $json.output, intermediateSteps: $json.intermediateSteps };\nconst checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3, ($('Prepare input').first().json.queries || [''])[0]) : answer;\nreturn { json: postprocess(ctx, checked, LABELS) };\n"
+      }
+    },
+    {
+      "id": "2924a47c-3a21-55d8-95e9-1fc8c92c2df7",
+      "name": "Guardrails (R2, R3)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// n8n Code node (\"Run Once for Each Item\"), placed right after Agent 2 or Agent 3.\n// Same rules as agent3_repair/guardrails/checks.py (R2, R3, R4). Keep both in sync.\n//\n// Expects on the item:\n//   $json.agent     : \"agent2_output\" | \"agent3_output\"\n//   $json.output    : the LLM answer, already parsed as JSON\n//   $json.retrieved : array of chunk_id returned by /search for this case\n// Returns the item with { valid: bool, problems: [...] } so an IF node can retry once\n// and then fall back to the \"insufficient information\" answer.\n\nconst SAFETY = /frein|brake|direction|steering|surchauffe|overheat|temp[ée]rature/i;\nconst KEEP_DRIVING = /continuer [àa] rouler|vous pouvez rouler|keep driving|safe to drive|pouvez continuer/i;\n\nconst agent = $json.agent;\nconst out = $json.output || {};\nconst retrieved = new Set($json.retrieved || []);\nconst problems = [];\n\nconst items = agent === 'agent2_output' ? (out.checks || []) : (out.steps || []);\nfor (const it of items) {\n  const who = it.id || `step ${it.n}`;\n  const c = it.citation || {};\n  if (!c.chunk_id) problems.push(`R2 ${who}: no citation`);\n  else if (!retrieved.has(c.chunk_id)) problems.push(`R2 ${who}: cites ${c.chunk_id}, not retrieved`);\n}\n\nconst text = JSON.stringify(out);\nconst firstCause = (out.causes && out.causes[0] && out.causes[0].name) || '';\nconst safety = SAFETY.test(out.fault || '') || SAFETY.test(firstCause);\nif (safety && KEEP_DRIVING.test(text)) problems.push('R3 safety fault: suggests the car can be driven');\n\nif (agent === 'agent3_output') {\n  if (safety && !(out.safety_warnings || []).length) problems.push('R3 safety fault without safety_warnings');\n  if ((out.confidence === 'low' || out.difficulty === 'mechanic_only') && !out.see_mechanic)\n    problems.push('R4 low confidence but see_mechanic is false');\n  if (out.status === 'ok' && !(out.steps || []).length) problems.push('R1 status ok but no steps');\n}\n\nreturn { json: { ...$json, valid: problems.length === 0, problems } };\n"
+      }
+    },
+    {
+      "id": "db174352-babf-5d6f-9bb0-5d3efa30f122",
+      "name": "Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "2e779b8e-f4dd-56d8-b1a3-ff811a55aa86",
+              "leftValue": "={{ $json.valid && !$json.insufficient }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2dc19193-9998-5b56-a6e8-157e4d3dd173",
+      "name": "Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $json.output };\n"
+      }
+    },
+    {
+      "id": "082f19b0-0de0-5498-b5b3-f8883b4b8fe4",
+      "name": "Insufficient",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const reason = $json.reason || ($json.problems || []).join('; ');\nreturn { json: { insufficient: true, reason, problems: $json.problems || [] } };\n"
+      }
+    },
+    {
+      "id": "0c43b30d-0dc1-5074-b713-833da4803633",
+      "name": "Webhook (audio)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent2-diagnose-audio",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "b246699a-222b-598b-85c8-c3258426db5f"
+    },
+    {
+      "id": "d6ef8c5c-d1fa-5dd4-a216-e2f11de5248a",
+      "name": "Agent 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        -260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8001/analyze",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "audio"
+            },
+            {
+              "name": "context",
+              "value": "={{ (JSON.parse($json.body.case).symptom || {}).context || 'unknown' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "id": "c0781aac-f631-57d8-b2c2-27c97868965b",
+      "name": "Merge audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        -260
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $('Webhook (audio)').first().json.body || {};\nconst c = typeof body.case === 'string' ? JSON.parse(body.case) : body.case;\nconst a = $json;\n// Agent 1 down or HTTP error: continue with the text only (the driver is told in the reply)\nconst failed = !a || a.error || !a.status;\nif (failed) delete c.audio; else c.audio = a;\nreturn { json: { body: c, unusable: !failed && a.status === 'unusable_audio', audio_failed: !!failed } };\n"
+      }
+    },
+    {
+      "id": "cb1b250f-a713-5020-b170-704e34ddeca8",
+      "name": "Audio usable?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        780,
+        -260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "76b9454d-87d1-577f-a81e-6bb8015817f3",
+              "leftValue": "={{ $json.unusable }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "efbea9b9-0f7c-5fd1-a94b-c156a692bc9b",
+      "name": "Ask for a new recording",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -360
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const fr = (($json.body.user_input || {}).language || 'fr') !== 'en';\nreturn { json: { needs_new_audio: true, message: fr ? 'Enregistrement inutilisable : refaites un enregistrement de 5 à 10 secondes près du moteur, sans parler.' : 'Unusable recording: please record 5 to 10 seconds close to the engine, without talking.' } };\n"
+      }
+    },
+    {
+      "id": "0bf02537-d085-552d-9409-57789892c44d",
+      "name": "Final answer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1800,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a1d4c0dd-a7fa-51a0-b954-730e1cb756b4",
+              "leftValue": "={{ $json.conclusive === true || ($json.checks || []).length === 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f9271ec8-ce19-54fd-a5d5-dcf618184dcb",
+      "name": "To Agent 3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Agent 2 -> Agent 3 hand-over, node \"To Agent 3\" (Code node source). Owner: B2. Port of agent2_diagnosis/to_agent3.py (same tests).\n// toAgent3(c, out): c = case record (with `diagnosis` = earlier Agent 2 outputs and `check_answers`), out = the last agent2_output.\n// Returns the input of Agent 3 (agent3_repair/schemas/agent3_input.schema.json).\n// Status: conclusive -> \"confirmed\"; no more checks and still not conclusive -> \"inconclusive\"; otherwise \"probable\".\n\nfunction toAgent3(c, out) {\n  const ui = c.user_input || {}, v = c.vehicle || {}, audio = c.audio || {};\n  const top = Object.fromEntries((audio.top3 || []).map((t) => [t.label, t.prob]));\n  const answers = Object.fromEntries((c.check_answers || []).map((a) => [a.check_id, a.answer || 'Not checked']));\n  const asked = (c.diagnosis || []).flatMap((d) => d.checks || []);\n  const status = out.conclusive ? 'confirmed' : (out.checks && out.checks.length ? 'probable' : 'inconclusive');\n  const internal = /^((passage )?[\\w.-]+_p\\d+_c\\d+|passage \\S+|obdex_\\S+)$/;\n  return {\n    case_id: c.case_id,\n    language: ['fr', 'en'].includes(ui.language) ? ui.language : 'fr',\n    vehicle: { make: v.make || '', model: v.model || '', year: parseInt(v.year || 0, 10), engine: v.fuel || null },\n    audio: { class: audio.label || 'unknown', confidence: audio.status === 'ok' && top[audio.label] !== undefined ? Number(top[audio.label]) : 0 },\n    diagnosis: {\n      status,\n      causes: (out.causes || []).map((x) => ({ name: x.name, prob: x.prob, evidence: (x.evidence || []).filter((e) => !internal.test(e)) })),\n    },\n    checks: asked.map((k) => ({ question: k.q, answer: answers[k.id] || 'Not checked' })),\n  };\n}\n\nlet c;\ntry { c = $('Webhook').first().json.body; } catch (e) { c = null; }\nif (!c) { try { c = $('Merge audio').first().json.body; } catch (e) { c = null; } }\nif (!c) c = $('When called by main workflow').first().json;\nreturn { json: { case_record: toAgent3(c, $json), agent2: $json } };\n"
+      }
+    },
+    {
+      "id": "afc96955-079a-5b9c-abbe-c11f85bb585c",
+      "name": "Agent 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2280,
+        -60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8003/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ case_record: $json.case_record, retrieve: true }) }}",
+        "options": {
+          "timeout": 150000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b9b847e6-1eac-557d-81ac-582adaa426d9",
+      "name": "Reply (Agent 2 + Agent 3)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2520,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Agent 1's analysis of this case, when the audio entry was used\nconst a1 = (() => { try { return $('Merge audio').first().json.body.audio || null; } catch (e) { return null; } })();\nreturn { json: { agent1: a1, agent2: $('To Agent 3').first().json.agent2, agent3: $json } };\n"
+      }
+    },
+    {
+      "id": "1f4535e6-3362-5a3d-ba2f-bd72820e7009",
+      "name": "Reply (Agent 2 only)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Agent 1's analysis of this case, when the audio entry was used\nconst a1 = (() => { try { return $('Merge audio').first().json.body.audio || null; } catch (e) { return null; } })();\nreturn { json: { agent1: a1, agent2: $json, agent3: null } };\n"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When called by main workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare input": {
+      "main": [
+        [
+          {
+            "node": "Agent 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 2": {
+      "main": [
+        [
+          {
+            "node": "Ground and decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent 2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "rag_search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent 2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ground and decide": {
+      "main": [
+        [
+          {
+            "node": "Guardrails (R2, R3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrails (R2, R3)": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insufficient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (audio)": {
+      "main": [
+        [
+          {
+            "node": "Agent 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 1": {
+      "main": [
+        [
+          {
+            "node": "Merge audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge audio": {
+      "main": [
+        [
+          {
+            "node": "Audio usable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio usable?": {
+      "main": [
+        [
+          {
+            "node": "Prepare input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for a new recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output": {
+      "main": [
+        [
+          {
+            "node": "Final answer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final answer?": {
+      "main": [
+        [
+          {
+            "node": "To Agent 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply (Agent 2 only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To Agent 3": {
+      "main": [
+        [
+          {
+            "node": "Agent 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent 3": {
+      "main": [
+        [
+          {
+            "node": "Reply (Agent 2 + Agent 3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "pinData": {}
+}

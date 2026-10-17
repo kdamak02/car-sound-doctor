@@ -272,10 +272,10 @@ if os.getenv("AGENT3", "false").lower() == "true":  # hand the final answer to A
     connections["To Agent 3"] = link("Agent 3")
     connections["Agent 3"] = link("Reply (Agent 2 + Agent 3)")
 
-workflow = {"name": "Agent 2 - diagnosis and checks", "nodes": nodes, "connections": connections,
+workflow = {"name": os.getenv("WORKFLOW_NAME", "Agent 2 - diagnosis and checks"), "nodes": nodes, "connections": connections,
             "active": False, "settings": {"executionOrder": "v1"}, "tags": [], "pinData": {}}
 
 if __name__ == "__main__":
-    out = ROOT / "n8n/workflows/agent2_diagnosis.json"
+    out = ROOT / os.getenv("OUT", "n8n/workflows/agent2_diagnosis.json")  # OUT=n8n/workflows/full_chain_ollama.json for the other variants
     out.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print("wrote", out.relative_to(ROOT), f"({len(nodes)} nodes, mode={MODE}, llm={LLM})")
