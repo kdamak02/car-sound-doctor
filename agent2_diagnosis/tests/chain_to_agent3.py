@@ -27,4 +27,7 @@ d = r.json()
 if r.status_code != 200:
     sys.exit(str(d)[:400])
 print("status:", d["guide"].get("status"), "| sources:", [(s.get("source_id"), s.get("page")) for s in d["retrieved_sources"]][:5])
+for st in (d["guide"].get("repair_guide") or {}).get("steps", [])[:4]:
+    print("  step", st.get("number"), "|", " ".join(str(st.get("action")).split())[:90], "|", st.get("source_id"), st.get("applicability_scope"))
+print("safety:", [str(w)[:70] for w in (d["guide"].get("safety_warnings") or [])][:2], "| limitations:", str(d["guide"].get("limitations"))[:120])
 print("validation:", {k: v for k, v in d["validation"].items() if k in ("valid", "citations_valid", "safety_passed", "errors")})

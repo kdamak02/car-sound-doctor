@@ -39,7 +39,7 @@ NS = uuid.UUID("a2a2a2a2-0000-4000-8000-000000000002")
 LLM = os.getenv("LLM", "gemini")  # gemini (team default) | ollama (local, no quota) | groq (shared team key)
 MODE = os.getenv("MODE", "tool")
 RAG_URL = os.getenv("RAG_URL", "http://rag-service:8002/search")  # docker compose service name
-TOP_K = int(os.getenv("RAG_TOP_K", "3" if LLM == "ollama" else "5"))  # a small local model has a short context window
+TOP_K = int(os.getenv("RAG_TOP_K", "3" if LLM in ("ollama", "groq") else "5"))  # small context window (Ollama) / free-tier tokens per minute (Groq)
 MAX_PASSAGES = 6  # prefetch mode: passages kept in the prompt (small context window)
 
 
@@ -128,7 +128,7 @@ if LLM == "ollama":
 elif LLM == "groq":
     LLM_NAME = "Groq Chat Model"  # credential "Groq account": Groq API key (same key as Agent 3)
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGroq", 1,
-                    {"model": os.getenv("GROQ_MODEL_A2", "openai/gpt-oss-120b"), "options": {"temperature": 0.2}}, [440, 340])
+                    {"model": os.getenv("GROQ_MODEL_A2", "openai/gpt-oss-120b"), "options": {"temperature": 0.2, "maxTokensToSample": 1500}}, [440, 340])  # free tier: 8000 tokens per minute
 else:
     LLM_NAME = "Gemini Chat Model"
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGoogleGemini", 1,
