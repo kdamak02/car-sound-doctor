@@ -1,0 +1,15 @@
+streamlit>=1.38
+python-dotenv>=1.0
+groq>=0.11
+jsonschema>=4.20
+requests>=2.32
+numpy>=1.26
+qdrant-client>=1.11
+rank-bm25>=0.2
+scikit-learn>=1.5
+pdfplumber>=0.11
+pypdf>=5.0
+PyMuPDF>=1.24
+reportlab>=4.2
+fastapi>=0.115
+uvicorn[standard]>=0.30

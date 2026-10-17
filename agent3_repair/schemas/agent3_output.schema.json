@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://car-sound-doctor.local/schemas/agent3-output.schema.json",
+  "title": "Agent 3 — Repair Guide Output",
+  "description": "Output contract for the Car Sound Doctor Repair Guide Agent (Agent 3). See AGENT_3_IMPLEMENTATION.md §7. v3 additions (applicability, parts_to_replace, diagnosis_only status, per-step applicability_scope) are OPTIONAL so that P6-v1 and P6-v2 outputs remain schema-valid.",
+  "type": "object",
+  "required": ["case_id", "status", "vehicle", "fault", "repair_guide", "safety_warnings", "limitations", "recommendation"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "case_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Non-empty identifier matching the incoming case."
+    },
+
+    "status": {
+      "type": "string",
+      "enum": [
+        "guide_available",
+        "diagnosis_only",
+        "insufficient_information",
+        "professional_assistance_required"
+      ],
+      "description": "Overall outcome. 'diagnosis_only' (v3) means the fault is identified and inspection steps exist, but no replacement/repair procedure was retrieved."
+    },
+
+    "vehicle": {
+      "type": "object",
+      "required": ["make", "model", "year"],
+      "additionalProperties": false,
+      "properties": {
+        "make":  { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "year":  { "type": "integer", "minimum": 1886 },
+        "engine": {
+          "type": ["string", "null"],
+          "description": "Optional engine/trim descriptor echoed from the case record. Accepted because models routinely copy it from the input; it is not used for validation."
+        }
+      }
+    },
+
+    "fault": {
+      "type": "object",
+      "required": ["name", "certainty", "evidence_summary"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable fault description."
+        },
+        "certainty": {
+          "type": "string",
+          "enum": ["suspected", "probable", "confirmed_by_evidence", "unconfirmed"],
+          "description": "Level of diagnostic certainty. Use confirmed_by_evidence only when sources and checks genuinely support it."
+        },
+        "evidence_summary": {
+          "type": "string",
+          "description": "Brief summary of the supporting evidence for this fault hypothesis."
+        }
+      }
+    },
+
+    "applicability": {
+      "type": "object",
+      "description": "v3: how broadly the guide applies, derived from retrieved source metadata. Optional for backward compatibility with P6-v1/v2.",
+      "required": ["scope", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "vehicle_specific",
+            "platform_wide",
+            "make_wide",
+            "some_vehicles",
+            "generic_maintenance"
+          ],
+          "description": "Narrowest scope supported by the cited evidence. Never wider than the union of cited source derived_scope values."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Plain-language justification for the scope claim, naming any restricting condition."
+        },
+        "source_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Source IDs that support the applicability claim."
+        }
+      }
+    },
+
+    "parts_to_replace": {
+      "type": "array",
+      "description": "v3: named physical components involved, with the role the source gives them. Empty for insufficient_information and professional_assistance_required.",
+      "items": {
+        "type": "object",
+        "required": ["name", "role", "source_id"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Specific component name as it appears in the cited source (translated to output language is allowed), e.g. 'accessory drive belt', 'idler pulley'."
+          },
+          "role": {
+            "type": "string",
+            "enum": ["replace", "inspect", "suspect"],
+            "description": "replace = source instructs replacement; inspect = check condition; suspect = named as a likely cause with no procedure (diagnosis_only only)."
+          },
+          "part_number": {
+            "type": ["string", "null"],
+            "description": "Only populate when the exact part number appears in the cited source text. Otherwise null."
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Retrieved source whose text names this component."
+          }
+        }
+      }
+    },
+
+    "repair_guide": {
+      "type": "object",
+      "required": ["difficulty", "tools", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "difficulty": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced", "professional_only"]
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "List of tools required for the repair procedure."
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["number", "action", "source_id"],
+            "additionalProperties": false,
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "1-based step ordinal."
+              },
+              "action": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Non-empty description of what to do. v3: must name the component where a component is involved."
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "ID of the retrieved source that supports this step."
+              },
+              "page": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "description": "Page number in the source document, or null if non-paginated."
+              },
+              "warning": {
+                "type": ["string", "null"],
+                "description": "Optional safety warning specific to this step."
+              },
+              "applicability_scope": {
+                "type": "string",
+                "enum": [
+                  "vehicle_specific",
+                  "platform_wide",
+                  "make_wide",
+                  "some_vehicles",
+                  "generic_maintenance"
+                ],
+                "description": "v3: how broadly THIS step applies, derived from the derived_scope of the passages it cites."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "safety_warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Top-level safety warnings applicable to the entire procedure."
+    },
+
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Known limitations, caveats, or gaps in the guide."
+    },
+
+    "recommendation": {
+      "type": "string",
+      "description": "Final recommendation to the user."
+    }
+  },
+
+  "allOf": [
+    {
+      "$comment": "Abstention statuses must carry no repair steps and no replacement parts.",
+      "if": {
+        "properties": {
+          "status": { "enum": ["insufficient_information", "professional_assistance_required"] }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "repair_guide": {
+            "properties": {
+              "steps": {
+                "maxItems": 0,
+                "description": "Steps must be empty when status is not guide_available or diagnosis_only."
+              }
+            }
+          },
+          "parts_to_replace": {
+            "maxItems": 0,
+            "description": "No parts may be listed when no guide is provided."
+          }
+        }
+      }
+    },
+    {
+      "$comment": "v3: diagnosis_only may suggest inspection or suspicion, never an outright replacement.",
+      "if": {
+        "properties": { "status": { "const": "diagnosis_only" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "parts_to_replace": {
+            "items": {
+              "properties": {
+                "role": { "enum": ["inspect", "suspect"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

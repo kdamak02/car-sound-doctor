@@ -1,27 +1,35 @@
-# Agent 3 — repair guide (group C, owner C1)
+# Agent 3 — Repair Guide
 
-LLM + RAG, AI Agent node in n8n, followed by the guardrail validator.
+Agent 3 is integrated here as a FastAPI service with the bundled v4 model, hybrid local RAG corpus, guardrail validation, and a Streamlit testbench. All paths used by the model resolve within this folder.
 
-**Input**: re-ranked causes (last Agent 2 pass), check answers, vehicle.
-**Tool**: `POST /search` with `section: ["procedure", "safety", "maintenance"]`.
-**Output**: `contracts/agent3_output.schema.json`. Prompt: `prompts/P6_repair_guide.md`,
-voice summary `prompts/P7_final_message.md`.
+## Setup
 
-## Guardrails
+From the repository root, install dependencies and configure Groq:
 
-`guardrails/checks.py` (Python, tested) and `n8n/code_nodes/validate_output.js` (same rules for n8n):
-
-| Rule | Check |
-|---|---|
-| R1 | output valid against the schema |
-| R2 | every step cites a chunk really returned by `/search` for this case |
-| R3 | brakes / steering / overheating: never "you can keep driving", safety warnings required |
-| R4 | low confidence or `mechanic_only` → `see_mechanic = true` |
-| R5 | web fallback results labelled "non vérifié" |
-
-Flow in n8n: Agent 3 → validate → if invalid, retry once with the problems in the prompt →
-still invalid → `insufficient_information()` answer.
-
-```bash
-pytest -q agent3_repair/tests      # from the repo root
+```powershell
+python -m pip install -r agent3_repair/requirements.txt
+Copy-Item agent3_repair/.env.example agent3_repair/.env
+# Set GROQ_API_KEY in agent3_repair/.env
 ```
+
+## Run the FastAPI service
+
+```powershell
+uvicorn api:app --app-dir agent3_repair --host 127.0.0.1 --port 8003
+```
+
+- `GET /health` — service status
+- `POST /search` — retrieve relevant manual passages for a case record
+- `POST /generate` — create and validate a repair guide
+
+`/generate` accepts `case_record` plus optional `retrieved_sources`. Set `retrieve: true` (or omit `retrieved_sources`) to use the bundled hybrid RAG index. The Groq API key is read from `agent3_repair/.env` or the process environment.
+
+## Run the Streamlit testbench
+
+```powershell
+streamlit run agent3_repair/app.py
+```
+
+The testbench supports preset scenarios and custom case/source JSON. Choose **Live RAG** to search the bundled corpus. The first run builds the local index from `data/rag_chunks.json`.
+
+The original repository guardrails remain in `guardrails/`; the integrated v4 contract validation and source grounding checks are in `validation/`.
