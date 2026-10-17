@@ -129,7 +129,8 @@ def queries(case: dict) -> list[str]:
     label = LABEL_EN.get((case.get("audio") or {}).get("label"), "")
     symptom = (case.get("symptom") or {}).get("description", "")
     answers = " ".join(a["answer"] for a in case.get("check_answers") or [])  # pass 2+: answers refine retrieval
-    qs = [f"{symptom} {label}", f"{label} causes" if label else "", f"{symptom} {answers}" if answers else ""]
+    said = (case.get("user_input") or {}).get("text", "")  # the driver's own sentence first: the reranker scores full sentences far better than keywords
+    qs = [said, f"{symptom} {label}", f"{label} causes" if label else "", f"{symptom} {answers}" if answers else ""]
     return list(dict.fromkeys(q.strip() for q in qs if q.strip()))
 
 
