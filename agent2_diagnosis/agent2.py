@@ -14,8 +14,8 @@ What it does
 Raises Insufficient when nothing grounded survives: n8n then goes to the "insufficient information" message.
 Prompts are read from prompts/*.md (single source of truth); the n8n AI Agent node must use the same text.
 
-Env: RAG_SERVICE_URL (default http://localhost:8002), AGENT2_PROVIDER gemini|claude|ollama (default gemini),
-     AGENT2_MODEL, GEMINI_API_KEY / ANTHROPIC_API_KEY.
+Env: RAG_SERVICE_URL (default http://localhost:8002), AGENT2_PROVIDER gemini|claude|ollama|groq (default gemini),
+     AGENT2_MODEL, GEMINI_API_KEY / ANTHROPIC_API_KEY / GROQ_API_KEY (groq: also read from agent3_repair/.env, git-ignored).
 """
 import json
 import os
@@ -23,7 +23,7 @@ import re
 import sys
 import time
 from pathlib import Path
-from urllib import request
+from urllib import error, request
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -38,7 +38,7 @@ LABEL_NAMES = {x["id"]: {"fr": x["fr"], "en": x["en"]} for x in LABELS["labels"]
 RAG_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8002")
 PROVIDER = os.getenv("AGENT2_PROVIDER", "gemini")
 MODELS = {"gemini": os.getenv("AGENT2_MODEL", "gemini-3.6-flash"), "claude": os.getenv("AGENT2_MODEL", "claude-sonnet-5-5"),
-          "ollama": os.getenv("AGENT2_MODEL", "qwen2.5:7b")}
+          "ollama": os.getenv("AGENT2_MODEL", "qwen2.5:7b"), "groq": os.getenv("AGENT2_MODEL", "openai/gpt-oss-120b")}
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
 SECTIONS = ["symptoms", "causes", "codes", "maintenance"]
@@ -149,7 +149,32 @@ def gather(case: dict, search, k: int = 5):
 
 # ---------------------------------------------------------------- LLM
 
+def groq_key() -> str:
+    """GROQ_API_KEY from the environment, else from Agent 3's git-ignored .env (the team shares one key)."""
+    if os.getenv("GROQ_API_KEY"):
+        return os.environ["GROQ_API_KEY"]
+    env = ROOT / "agent3_repair/.env"
+    for line in env.read_text("utf-8").splitlines() if env.exists() else []:
+        if line.startswith("GROQ_API_KEY="):
+            return line.split("=", 1)[1].strip().strip("\"'")
+    raise RuntimeError("GROQ_API_KEY not set (environment or agent3_repair/.env)")
+
+
 def ask(system: str, user: str) -> str:
+    if PROVIDER == "groq":  # OpenAI-compatible endpoint
+        body = json.dumps({"model": MODELS["groq"], "temperature": 0.2, "response_format": {"type": "json_object"},
+                           "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}).encode()
+        req = request.Request("https://api.groq.com/openai/v1/chat/completions", data=body,
+                              headers={"Content-Type": "application/json", "Authorization": "Bearer " + groq_key(),
+                                       "User-Agent": "car-sound-doctor-agent2"})
+        for attempt in range(4):
+            try:
+                with request.urlopen(req, timeout=120) as r:
+                    return json.loads(r.read())["choices"][0]["message"]["content"]
+            except error.HTTPError as e:  # rate limit / overload / JSON mode produced invalid JSON: back off and retry
+                if attempt == 3 or e.code not in (400, 429, 500, 503):
+                    raise
+                time.sleep(3 * 2**attempt)
     if PROVIDER == "ollama":
         body = json.dumps({"model": MODELS["ollama"], "stream": False, "format": "json",
                            "options": {"temperature": 0.2, "num_ctx": 8192},
