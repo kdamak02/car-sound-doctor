@@ -7,6 +7,7 @@ services:
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-Africa/Tunis}
       - N8N_SECURE_COOKIE=false
+      - NODE_FUNCTION_ALLOW_BUILTIN=fs   # the Telegram front keeps its state and a lock file (n8n/telegram_front/)
     volumes:
       - ./n8n_data:/home/node/.n8n
       - ./n8n/workflows:/workflows:ro

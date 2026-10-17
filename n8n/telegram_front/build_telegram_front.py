@@ -4,7 +4,7 @@
 
 Polling (getUpdates every 5 s) instead of a Telegram Trigger: it works on a laptop with no public URL or tunnel.
 Needs in the root .env (read by the n8n container): TELEGRAM_BOT_TOKEN (BotFather); optional TELEGRAM_API_BASE (tests with
-mock_telegram.py), CHAIN_BASE_URL (default http://localhost:5678/webhook). docker-compose.yml sets NODE_FUNCTION_ALLOW_BUILTIN=fs:
+mock_telegram.py), CHAIN_BASE_URL (default http://127.0.0.1:5678/webhook). docker-compose.yml sets NODE_FUNCTION_ALLOW_BUILTIN=fs:
 the state of the conversations and a lock file (no two executions at once) live in /home/node/.n8n/telegram/.
 It calls the full-chain workflow (n8n/workflows/full_chain_*.json) through its two webhooks, which must be active.
 """
@@ -77,7 +77,7 @@ return { json: { chat_id: m.chat.id, run: r.run, state: r.state } };
 RUN = PRELUDE + r"""
 const run = $json.run;
 if (!run) return { json: { ...$json, reply: null } };
-const CHAIN = $env.CHAIN_BASE_URL || 'http://localhost:5678/webhook';
+const CHAIN = $env.CHAIN_BASE_URL || 'http://127.0.0.1:5678/webhook';
 try {
   let reply;
   if (run.kind === 'audio') {

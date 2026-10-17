@@ -23,6 +23,8 @@ jobs:
         run: pytest -q agent1_audio/tests agent3_repair/tests agent2_diagnosis/tests
       - name: Agent 2 n8n code nodes
         run: node n8n/code_nodes/test_agent2_nodes.js
+      - name: Telegram front logic
+        run: node n8n/telegram_front/test_telegram_front.js
       - name: No secrets committed
         run: |
           if git ls-files | grep -E '(^|/)\.env$|kaggle\.json|access_token'; then

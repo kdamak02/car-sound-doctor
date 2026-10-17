@@ -18,7 +18,7 @@ Telegram (NOT in the repo yet) -> n8n -> Agent 1 (audio, :8001) -> Agent 2 (diag
 | Agent 3, repair guide | `agent3_repair/` (group C, Groq model) | **measured** returns validated guides; content is generic (see section 5) |
 | Hand-over Agent 2 -> 3 | `agent2_diagnosis/to_agent3.py` and `n8n/code_nodes/agent2_to_agent3.js` (same rules, same tests) | **measured** end to end |
 | Test page | `agent2_diagnosis/streamlit_app.py` (:8501), switch "Chaîne complète" for the three agents | 6 headless tests pass |
-| Telegram trigger, voice download, "when does the noise happen?" buttons | nowhere | **not built**: the team's main workflow must call `POST /webhook/agent2-diagnose-audio` |
+| Telegram front (voice note, car, symptom, context buttons, checks as buttons, final guide) | `n8n/telegram_front/`, `n8n/workflows/telegram_front.json` | **measured** with a fake Telegram (`mock_telegram.py`); **not tested** with a real bot: see `n8n/telegram_front/README.md` for the 5 steps (BotFather token in the root `.env`) |
 
 Branches: `integration/agent2-agent3` (everything, used by the whole team), `agent2/reranker` (PR 2: Agent 2 only), `agent2/diagnosis-logic` (PR 1).
 Do not force-push `integration/agent2-agent3`: teammates push to it. Merge `origin/integration/agent2-agent3` before pushing.
@@ -76,7 +76,7 @@ Cases that the manuals cover (`agent2_diagnosis/tests/cases/README.md`): Clio st
 ## 6. To do
 
 1. Ask group A for the demo recording and run it through `/webhook/agent2-diagnose-audio`; check label, confidence and anomaly score; keep a backup recording.
-2. Build the Telegram front: Trigger -> download the voice note -> buttons for the context (Au ralenti / Au démarrage / Au freinage / En roulant) -> HTTP to `agent2-diagnose-audio` -> send the checks as questions -> wait for the answers (timeout 30 min, max 2 rounds) -> send `agent3` as the final message (`insufficient` -> "see a mechanic").
+2. Create the real bot with @BotFather and run it (`n8n/telegram_front/README.md`, step "Set up the real bot"); send a voice note; check several chats and the 30-minute timeout idea of ARCHITECTURE.md §7 (not implemented: the state just waits).
 3. Send the Agent 3 note (problem 1) to group C; ask B1 about the `rerank` flag and the `maintenance` section (Agent 2 and Agent 3 both read it).
 4. Open the PR for `integration/agent2-agent3` after telling the team: it contains about 90 MB of Agent 3 data. The file `agent3_repair/data/qdrant_db/.../storage.sqlite` changes whenever Agent 3 runs: do not commit it (`git checkout --` it after stopping Agent 3).
 5. Finish the report (`report/agent2_sections.md` is a draft), pre-record a demo run (`agent2_diagnosis/DEMO.md` is the script), prepare answers to jury questions (same file).

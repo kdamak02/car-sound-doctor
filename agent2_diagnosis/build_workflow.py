@@ -230,7 +230,7 @@ if os.getenv("AGENT1", "false").lower() == "true":  # second entry: voice note +
               "bodyParameters": {"parameters": [
                   {"parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "audio"},
                   {"name": "context", "value": "={{ (JSON.parse($json.body.case).symptom || {}).context || 'unknown' }}"}]},
-              "options": {"timeout": 30000}}, [260, -260], onError="continueRegularOutput", retryOnFail=True, maxTries=2),
+              "options": {"timeout": 90000}}, [260, -260], onError="continueRegularOutput", retryOnFail=True, maxTries=2),
         code("Merge audio", MERGE_AUDIO, [520, -260]),
         node("Audio usable?", "n8n-nodes-base.if", 2.2,
              {"conditions": {"options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
