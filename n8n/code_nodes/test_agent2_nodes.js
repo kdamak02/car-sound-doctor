@@ -18,6 +18,7 @@ const postprocess = load('n8n/code_nodes/agent2_postprocess.js', 'postprocess');
 // retrieve() is async: no JSON round trip here (a Promise cannot be serialised); its result is round-tripped where compared
 const rescueFn = vm.runInNewContext(read('n8n/code_nodes/agent2_rescue.js') + '\n;rescue', {});
 const supportFn = vm.runInNewContext(read('n8n/code_nodes/agent2_postprocess.js') + '\n;supportFilter', {});
+const toAgent3 = load('n8n/code_nodes/agent2_to_agent3.js', 'toAgent3');
 const retrieveFn = vm.runInNewContext(read('n8n/code_nodes/agent2_retrieve.js') + '\n;retrieve', {});
 
 const promptText = (stem) => {
@@ -155,11 +156,11 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
   const pp = prepare(freshCase(), P3, SYSTEM, LABELS, 'prefetch');
   assert(!pp.user_message.includes('rag_search'));
   assert(prepare(freshCase(), P3, SYSTEM, LABELS).user_message.includes('rag_search')); // tool mode keeps it
-  assert.deepStrictEqual(pp.queries, ['sifflement au ralenti, surtout le matin Squealing belt', 'Squealing belt causes']);
+  assert.deepStrictEqual(pp.queries, ['Ma 208 essence de 2020 siffle au ralenti surtout le matin', 'sifflement au ralenti, surtout le matin Squealing belt', 'Squealing belt causes']);
   const calls = [];
   const search = async (q, f, k) => { calls.push([q, f, k]); return JSON.parse(JSON.stringify(SEARCH)); };
   const r = await retrieveFn({ ...pp, top_k: 3 }, search, 6);
-  assert.strictEqual(calls.length, 2); assert.strictEqual(calls[0][2], 3);
+  assert.strictEqual(calls.length, 3); assert.strictEqual(calls[0][2], 3);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(calls[0][1])), { section: ['symptoms', 'causes', 'codes', 'maintenance'], make: 'Peugeot', model: '208', year: 2020 });
   assert(r.full_prompt.includes(`[${P1}]`) && r.full_prompt.includes('Retrieval level: exact_model') && r.full_prompt.includes('rank the 2 to 5 most likely causes'));
   const uniq = JSON.parse(JSON.stringify(r.observations))[0].observation.passages;
@@ -198,5 +199,15 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
     intermediateSteps: [{ observation: { passages: [{ chunk_id: 'a' }, { chunk_id: 'b' }] } }] };
   const sup = await supportFn(ans, async (q) => ({ passages: q === 'battery' ? [{ chunk_id: 'b' }] : [] }), {}, 3);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(sup.output.causes.map((c) => c.name))), ['battery']);
+  // hand-over to Agent 3: same expectations as agent2_diagnosis/tests/test_to_agent3.py
+  const hc = JSON.parse(read('agent2_diagnosis/tests/cases/clio_starter_pass2.json'));
+  const hout = { pass: 2, conclusive: true, checks: [], causes: [{ name: 'Batterie', label: 'dead_battery', prob: 0.9, evidence: ['le conducteur dit : propres', 'clio4ph1fr_p225_c1', 'passage clio4ph1fr_p225_c1'] }] };
+  const h = toAgent3(hc, hout);
+  assert.strictEqual(h.diagnosis.status, 'confirmed'); assert.strictEqual(h.vehicle.year, 2015); assert.strictEqual(h.language, 'fr');
+  assert.deepStrictEqual(h.audio, { class: 'dead_battery', confidence: 0.7 });
+  assert.deepStrictEqual(h.diagnosis.causes[0].evidence, ['le conducteur dit : propres']);
+  assert.strictEqual(h.checks.length, hc.check_answers.length); assert(h.checks.every((k) => k.answer !== 'Not checked'));
+  assert.strictEqual(toAgent3(hc, { ...hout, conclusive: false, checks: [{ id: 'c1' }] }).diagnosis.status, 'probable');
+  assert.strictEqual(toAgent3(hc, { ...hout, conclusive: false, checks: [] }).diagnosis.status, 'inconclusive');
   console.log('agent2 n8n nodes: all tests passed');
 })();

@@ -74,7 +74,7 @@ if MODE == "prefetch":  # Basic LLM Chain answers in `text`; the passages come f
     AGENT_OUT = "{ output: $json.text ?? $json.response ?? $json.output, intermediateSteps: $('Retrieve passages').first().json.observations }"
 else:                   # AI Agent node: tool results are in intermediateSteps
     AGENT_OUT = "{ output: $json.output, intermediateSteps: $json.intermediateSteps }"
-AGENT_STEPS_JS = "(() => { const st = $('Agent 2').first().json.intermediateSteps || []; if (st.length) return st; try { return $('Rescue prompt').first().json.observations || []; } catch (e) { return []; } })()"
+AGENT_STEPS_JS = "(() => { try { const o = $('Rescue prompt').first().json.observations; if (o) return o; } catch (e) {} return $('Agent 2').first().json.intermediateSteps || []; })()"
 if os.getenv("LLM", "gemini") == "ollama" and os.getenv("MODE", "tool") == "tool" and os.getenv("RESCUE", "true").lower() == "true":
     # the answer comes either from the agent (`output`) or from the rescue chain (`text`); the passages are always the agent's
     AGENT_OUT = "{ output: $json.output !== undefined ? $json.output : $json.text, intermediateSteps: " + AGENT_STEPS_JS + " }"
@@ -92,8 +92,9 @@ RESCUE = (f"const RAG_URL = {json.dumps(RAG_URL)};\nconst TOP_K = {TOP_K};\n\n" 
           "  method: 'POST', url: RAG_URL, body: { query, filters, top_k, rerank: true }, json: true });\n"
           "const prep = $('Prepare input').first().json;\n"
           "let steps = $('Agent 2').first().json.intermediateSteps || [];\n"
-          "// the agent failed before giving any tool result (a 7B loop): search here instead, the answer is still grounded in /search\n"
-          f"if (!steps.length) steps = (await retrieve({{ ...prep, top_k: TOP_K }}, search, {MAX_PASSAGES})).observations;\n"
+          "// the agent got no passages (a 7B loop, or a search that returned nothing): search here instead, the answer is still grounded in /search\n"
+          f"const has = steps.some((s) => {{ let o = s.observation; if (typeof o === 'string') {{ try {{ o = JSON.parse(o); }} catch (e) {{ return false; }} }} return !!o && Array.isArray(o.passages) && o.passages.length > 0; }});\n"
+          f"if (!has) steps = (await retrieve({{ ...prep, top_k: TOP_K }}, search, {MAX_PASSAGES})).observations;\n"
           f"return {{ json: {{ ...rescue(prep, steps, {MAX_PASSAGES}), observations: steps }} }};\n")
 GUARDRAILS = src("validate_output.js")  # the team's node, unchanged
 OUTPUT = "return { json: $json.output };\n"
@@ -202,6 +203,30 @@ if RESCUE_ON:  # empty agent answer -> one JSON-mode call with the passages the 
     connections["Rescue prompt"] = link("Rescue answer")
     connections["Rescue answer"] = link("Ground and decide")
     connections["Ollama JSON (rescue)"] = link("Rescue answer", "ai_languageModel")
+
+if os.getenv("AGENT3", "false").lower() == "true":  # hand the final answer to Agent 3 (repair guide); reply = {agent2, agent3}
+    TO_A3 = (src("agent2_to_agent3.js") + "\nlet c;\ntry { c = $('Webhook').first().json.body; } catch (e) { c = null; }\n"
+             "if (!c) c = $('When called by main workflow').first().json;\n"
+             "return { json: { case_record: toAgent3(c, $json), agent2: $json } };\n")
+    nodes += [
+        node("Final answer?", "n8n-nodes-base.if", 2.2,
+             {"conditions": {"options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                             "conditions": [{"id": uid("cond-final"), "leftValue": "={{ $json.conclusive === true || ($json.checks || []).length === 0 }}",
+                                             "rightValue": "", "operator": {"type": "boolean", "operation": "true", "singleValue": True}}],
+                             "combinator": "and"}, "options": {}}, [1800, 0]),
+        code("To Agent 3", TO_A3, [2040, -60]),
+        node("Agent 3", "n8n-nodes-base.httpRequest", 4.2,
+             {"method": "POST", "url": os.getenv("AGENT3_URL", "http://host.docker.internal:8003/generate"), "sendBody": True,
+              "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ case_record: $json.case_record, retrieve: true }) }}",
+              "options": {"timeout": 150000}}, [2280, -60], onError="continueRegularOutput"),
+        code("Reply (Agent 2 + Agent 3)", "return { json: { agent2: $('To Agent 3').first().json.agent2, agent3: $json } };" + "\n", [2520, -60]),
+        code("Reply (Agent 2 only)", "return { json: { agent2: $json, agent3: null } };" + "\n", [2040, 100]),
+    ]
+    connections["Output"] = link("Final answer?")
+    connections["Final answer?"] = {"main": [[{"node": "To Agent 3", "type": "main", "index": 0}],
+                                             [{"node": "Reply (Agent 2 only)", "type": "main", "index": 0}]]}
+    connections["To Agent 3"] = link("Agent 3")
+    connections["Agent 3"] = link("Reply (Agent 2 + Agent 3)")
 
 workflow = {"name": "Agent 2 - diagnosis and checks", "nodes": nodes, "connections": connections,
             "active": False, "settings": {"executionOrder": "v1"}, "tags": [], "pinData": {}}

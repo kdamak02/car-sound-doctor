@@ -71,7 +71,8 @@ function prepare(c, P3, SYSTEM, LABELS, mode) {  // mode: 'tool' (default) or 'p
   const label = labelEn[(a && a.label) || ''] || '';
   const symptom = (c.symptom && c.symptom.description) || '';
   const answered = (c.check_answers || []).map((x) => x.answer).join(' ');
-  const queries = [...new Set([`${symptom} ${label}`, label ? `${label} causes` : '', answered ? `${symptom} ${answered}` : ''].map((q) => q.trim()).filter(Boolean))];
+  const said = (c.user_input && c.user_input.text) || ''; // the driver's own sentence first: the reranker scores full sentences far better than keywords
+  const queries = [...new Set([said, `${symptom} ${label}`, label ? `${label} causes` : '', answered ? `${symptom} ${answered}` : ''].map((q) => q.trim()).filter(Boolean))];
 
   const v = c.vehicle || {};
   const filters = { section: ['symptoms', 'causes', 'codes', 'maintenance'] };
