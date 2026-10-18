@@ -88,6 +88,8 @@ Limits: 30 queries, one labeller, queries share the vocabulary of the manuals, r
 10. A reranker threshold that was too strict dropped correct passages (hit rate 0.846 -> 0.692 at 0.10 for every level); the final settings use a lower threshold for the exact vehicle and a stricter one for relaxed levels.
 11. The power-steering case fails on every model tried (the relevant Clio passage scores low with the reranker and small models cite label names instead of passage ids): kept as a known limit.
 12. The repair guides of Agent 3 are generic for our demo faults (a "disconnect the battery" guide for a starter case) although they pass its validator; reported to group C with evidence (`agent2_diagnosis/NOTE_FOR_AGENT3.md`).
+14. An output cap of 1,500 tokens on the Groq node truncated the JSON answer of the reasoning model (its hidden reasoning counts against the cap): pass 2 failed with "the model cited none" until the cap was raised to 4,000; found by reading the raw agent output of the n8n execution.
+15. The support check re-searched with the reranker and vetoed a correct answer (the long Clio troubleshooting table scored low for the verification query); it now searches without the reranker threshold and only requires the cited page to come back in the top 8.
 13. A Python client sent the voice note without a content type and n8n did not see a file; curl added it automatically. Found with the n8n execution data.
 
 ## Annex A — prompt library

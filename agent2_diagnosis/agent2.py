@@ -116,10 +116,10 @@ def describe_audio(audio: dict | None, lang: str = "en") -> str:
 
 # ---------------------------------------------------------------- retrieval
 
-def rag_search(query: str, vehicle: dict, top_k: int = 5) -> dict:
+def rag_search(query: str, vehicle: dict, top_k: int = 5, rerank: bool = True) -> dict:
     """POST /search (contracts/rag_search.schema.json)."""
     filters = {k: vehicle[k] for k in ("make", "model", "year") if vehicle.get(k)}
-    body = json.dumps({"query": query, "filters": {**filters, "section": SECTIONS}, "top_k": top_k, "rerank": True}).encode()
+    body = json.dumps({"query": query, "filters": {**filters, "section": SECTIONS}, "top_k": top_k, "rerank": rerank}).encode()
     req = request.Request(RAG_URL.rstrip("/") + "/search", data=body, headers={"Content-Type": "application/json"})
     with request.urlopen(req, timeout=120) as r:  # reranked searches take several seconds on CPU
         return json.loads(r.read())
@@ -319,7 +319,10 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
 
     system = load_prompt("P4" if n == 1 else "P5")
     raw = parse_json(llm(system, user_message(case, passages, level, allow_new)))
-    raw_causes = supported_causes(raw.get("causes"), by_id, case, search) if SUPPORT_CHECK else raw.get("causes")
+    # the support check searches without the reranker threshold: a long table chunk can score low for the cause query and a check that
+    # vetoes correct answers is worse than a looser one; the cited passage must still come back in the top 8 for the cause + the symptom
+    plain = (lambda q, v, k: rag_search(q, v, k, rerank=False)) if search is rag_search else search
+    raw_causes = supported_causes(raw.get("causes"), by_id, case, plain) if SUPPORT_CHECK else raw.get("causes")
     causes = build_causes(raw_causes, by_id, (case.get("user_input") or {}).get("language") or "fr")
     if not causes:
         raise Insufficient("the passages support no cause (or the model cited none)")

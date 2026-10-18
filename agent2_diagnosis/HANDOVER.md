@@ -56,6 +56,11 @@ streamlit run agent2_diagnosis/streamlit_app.py                         # or use
 Replies: `{agent1, agent2, agent3}` (agent3 is `null` while checks are pending), `{needs_new_audio, message}` for an unusable recording, `{insufficient, reason}` when the manuals do not support an answer.
 Cases that the manuals cover (`agent2_diagnosis/tests/cases/README.md`): Clio starter/battery (p. 225), Clio oil pressure, Peugeot 208 charge light. **The demo case is the Clio that does not start (battery, context `startup`).** The manuals do not cover other noises: Agent 2 then answers `insufficient` on purpose.
 
+### Test clips (no recording needed)
+`data/audio/demo_clips/` (git-ignored) holds 6 public 1.5 s clips from `github.com/jlacsam/cardiag` (`samples/sample_failed_start_0000..0004.wav`, `sample_normal_engine_startup_0000.wav`, 66,194 bytes each; no LICENSE file seen in the repo: local tests only, do not commit). Re-download: `curl -L -o <name>.wav https://raw.githubusercontent.com/jlacsam/cardiag/main/samples/<name>.wav`. They are copies of Agent 1's training data, so results are optimistic.
+Convert to a voice note: `ffmpeg -i x.wav -ar 48000 -ac 1 -c:a libopus -b:a 48k x.ogg`. **Measured on Agent 1 (context `startup`)**: `failed_start_0002/0003/0004` -> `bad_ignition` 80-100 % at every bitrate tried (robust); `failed_start_0000/0001` -> `dead_battery` 52 % as WAV but `normal_startup` 48-91 % after Opus compression (flips: a real weakness); `normal_engine_startup_0000` -> `normal_startup` 100 %.
+**Full chain with `failed_start_0002` (48 kbps OGG) on Groq `gpt-oss-120b`**: Agent 1 `bad_ignition` high; pass 1 9 s (causes: battery 0.6, starter 0.4, 3 checks); pass 2 36 s (conclusive: electrical circuit 0.82); Agent 3 `guide_available`, valid, 3 steps, but generic (battery disconnect, step 1 is a raw title).
+
 ## 4. Measured results (use them in the report; they come from small samples)
 
 - Retrieval, 30 queries (`rag/eval/queries.jsonl`, written by one person): chunking by heading beats fixed windows; BM25 + dense beats dense; hit rate 0.846 (0.923 without the reranker and with the `maintenance` section); the bge-reranker rejects 4 of 4 out-of-corpus queries (1 of 4 without). Details and tables: `agent2_diagnosis/tests/eval_results.md`.
