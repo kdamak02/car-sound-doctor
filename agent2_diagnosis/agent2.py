@@ -20,6 +20,7 @@ Env: RAG_SERVICE_URL (default http://localhost:8002), AGENT2_PROVIDER gemini|cla
 import json
 import os
 import re
+import unicodedata
 import sys
 import time
 from pathlib import Path
@@ -52,6 +53,20 @@ HEALTHY_MAX = 0.5  # Agent 1 hears a healthy engine (normal class, unusualness <
 GENERAL_NOTE = {"fr": "Attention : aucun manuel de ce modèle exact n'a été trouvé, la réponse repose sur des informations générales ou d'autres véhicules.",
                 "en": "Careful: no manual for this exact model was found, the answer rests on general information or other vehicles."}
 GENERAL_ANSWER = re.compile(r"g[ée]n[ée]ral|ce mod[èe]le exact|mod[èe]le exact|general information|exact model", re.I)
+
+
+def effective_level(level: str, causes: list[dict], by_id: dict, vehicle) -> str:
+    """The search relaxes its filter (exact_model -> make -> generic) when fewer than 2 strong manual passages match the exact model,
+    even if what it returns does come from that model's manual. If every manual passage the causes cite is from the driver's make and
+    model, the answer is an exact-model answer. Same as effectiveLevel() in n8n/code_nodes/agent2_postprocess.js."""
+    v = vehicle or {}
+    if level == "exact_model" or not v.get("make") or not v.get("model"):
+        return level
+    norm = lambda x: re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
+    same = lambda a, b: bool(norm(a)) and bool(norm(b)) and (norm(a).startswith(norm(b)) or norm(b).startswith(norm(a)))
+    ids = {e[8:] for c in causes for e in c["evidence"] if e.startswith("passage ")}
+    manual = [by_id[i] for i in ids if i in by_id and by_id[i].get("make")]  # generic sources (OBDex) have no make
+    return "exact_model" if manual and all(same(p["make"], v["make"]) and same(p.get("model"), v["model"]) for p in manual) else level
 
 
 def healthy_audio(audio) -> bool:
@@ -348,6 +363,7 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
     causes = build_causes(raw_causes, by_id, (case.get("user_input") or {}).get("language") or "fr", universe=raw.get("causes"))
     if not causes:
         raise Insufficient("the passages support no cause (or the model cited none)")
+    level = effective_level(level, causes, by_id, case.get("vehicle"))  # what the cited passages really are, not how far the search relaxed
     cap = min(NON_EXACT_MAX if level != "exact_model" else 1.0, HEALTHY_MAX if healthy_audio(case.get("audio")) else 1.0)  # limits the evidence imposes, whatever the model says
     for c in causes:
         c["prob"] = min(c["prob"], cap)
@@ -360,6 +376,11 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
     lang = ((case.get("user_input") or {}).get("language") or "fr")
     # small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
     message = raw["message_to_user"].replace("\\n", "\n") if isinstance(raw.get("message_to_user"), str) else ""
+    # the questions are sent after this message ("ci-dessous"); with no question left, a sentence asking to answer them is wrong
+    if checks:
+        message = re.sub(r"\babove\b", "below", re.sub(r"ci[-\u2010\u2011 ]dessus", "ci-dessous", message, flags=re.I), flags=re.I)
+    else:
+        message = re.sub(r"[ \t]+\n", "\n", re.sub(r"[^.!?\n]*\b(r[ée]pond|answer)[^.!?\n]*\bquestions?\b[^.!?\n]*[.!?]?", "", message, flags=re.I)).strip()
     if level != "exact_model" and not GENERAL_ANSWER.search(message):  # guaranteed by code: the prompt asks for it but a small model forgets
         message = (GENERAL_NOTE.get(lang, GENERAL_NOTE["en"]) + " " + message).strip()
     out = {"pass": n, "causes": causes, "checks": checks, "conclusive": conclusive,

@@ -3,6 +3,8 @@
 # Safe to run again: every step is skipped when it is already done.
 # What it cannot do for you (it tells you when): install Docker Desktop / Ollama, create the Telegram bot,
 # get a Groq key, and get the 6 owner's manuals (copyrighted PDFs, not in Git: ask group B).
+#   .\scripts\setup_demo_pc.ps1 -TelegramToken "<token>" -GroqKey "<key>"   (no questions asked: you can leave it running)
+param([string]$TelegramToken = "", [string]$GroqKey = "", [switch]$NoPrompt)
 $ErrorActionPreference = "Continue"
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
@@ -50,14 +52,14 @@ if (-not (Test-Path ".env")) {
 }
 $envText = Get-Content .env -Raw
 if ($envText -notmatch '(?m)^TELEGRAM_BOT_TOKEN=\S+') {
-    $t = Read-Host "Telegram bot token from @BotFather (Enter to skip)"
+    $t = $TelegramToken; if (-not $t -and -not $NoPrompt) { $t = Read-Host "Telegram bot token from @BotFather (Enter to skip)" }
     if ($t) { SetEnv ".env" "TELEGRAM_BOT_TOKEN" $t; Ok "Telegram token saved in .env (never commit .env)" }
     else { Todo "Create the bot: Telegram -> @BotFather -> /newbot, then put TELEGRAM_BOT_TOKEN=... in .env" }
 } else { Ok "TELEGRAM_BOT_TOKEN set" }
 if (-not $ollama -and $envText -notmatch '(?m)^TELEGRAM_LLM=') { SetEnv ".env" "TELEGRAM_LLM" "off"; Ok "TELEGRAM_LLM=off (no Ollama: the bot uses its code fallbacks)" }
 if (-not (Test-Path "agent3_repair\.env")) { Copy-Item agent3_repair\.env.example agent3_repair\.env }
 if ((Get-Content agent3_repair\.env -Raw) -notmatch '(?m)^GROQ_API_KEY=\S{20,}') {
-    $g = Read-Host "Groq API key (free at https://console.groq.com/keys, or the team key; Enter to skip)"
+    $g = $GroqKey; if (-not $g -and -not $NoPrompt) { $g = Read-Host "Groq API key (free at https://console.groq.com/keys, or the team key; Enter to skip)" }
     if ($g) { SetEnv "agent3_repair\.env" "GROQ_API_KEY" $g; Ok "Groq key saved in agent3_repair\.env" }
     else { Todo "Put GROQ_API_KEY=... in agent3_repair\.env (Agent 3 and the Groq workflow need it)" }
 } else { Ok "GROQ_API_KEY set" }

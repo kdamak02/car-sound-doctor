@@ -79,6 +79,24 @@ _SCOPE_ORDER_GUIDE = [
     "make_wide",
     "generic_maintenance",
 ]
+_STEP_HEADING = re.compile(r"^\[[^\]]*\|\s*step\s*\d+[^\]]*\]$", re.I)  # iFixit title line: "[Guide title | Step 1: Step 1]"
+_STEP_PREFIX = re.compile(r"^(?:caution|warning|note|attention|avertissement)\s*:\s*", re.I)
+
+
+def clean_step_text(text: str) -> str | None:
+    """Display form of an extracted step: wiki bold/italic quotes removed; None for a guide's title line."""
+    t = re.sub(r"'{2,}", "", str(text or "")).strip()
+    t = re.sub(r"\s+", " ", t)
+    if not t or _STEP_HEADING.match(t):
+        return None
+    return t
+
+
+def step_key(text: str) -> str:
+    """Two steps with this key are the same step ("CAUTION: switch off..." repeats "Switch off...")."""
+    return re.sub(r"[^a-z0-9]", "", _STEP_PREFIX.sub("", text.lower()))
+
+
 _DERIVED_TO_SCOPE_GUIDE = {
     "exact": "vehicle_specific",
     "platform": "platform_wide",
@@ -766,6 +784,9 @@ class Agent3Model:
             )
             sentences = [s.strip(" \t-*•") for s in re.split(r"(?<=[.!?])\s+|\n+", text) if s.strip()]
             for sentence in sentences:
+                sentence = clean_step_text(sentence)
+                if sentence is None or step_key(sentence) in {step_key(st["action"]) for st in steps}:
+                    continue
                 do_repair = bool(procedure_cues.search(sentence)) and source_has_procedure
                 do_inspection = bool(inspection_cues.search(sentence))
                 if has_procedure and not do_repair:
@@ -1010,6 +1031,18 @@ class Agent3Model:
             repair["tools"] = []
         if not isinstance(repair.get("steps"), list):
             repair["steps"] = []
+
+        # Clean the display text (wiki markup, guide title lines) and drop repeated steps
+        kept, seen = [], set()
+        for step in repair["steps"]:
+            if isinstance(step, dict) and isinstance(step.get("action"), str):
+                action = clean_step_text(step["action"])
+                if action is None or step_key(action) in seen:
+                    continue
+                seen.add(step_key(action))
+                step["action"] = action
+            kept.append(step)
+        repair["steps"] = kept
 
         # Renumber steps so ordinals are always 1..n
         for idx, step in enumerate(repair["steps"], 1):

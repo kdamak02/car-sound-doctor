@@ -9,6 +9,17 @@
 // Rules: only passages that /search returned count; uncited causes and checks are dropped; conclusive, safety_stop,
 // label validity and check ids are decided here, not by the LLM.
 
+// same as effective_level() in agent2.py
+function effectiveLevel(level, causes, byId, vehicle) {
+  const norm = (x) => String(x || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const v = vehicle || {};
+  if (level === 'exact_model' || !v.make || !v.model) return level;
+  const ids = new Set(causes.flatMap((c) => c.evidence.filter((e) => e.startsWith('passage ')).map((e) => e.slice(8))));
+  const manual = [...ids].map((i) => byId[i]).filter((p) => p && p.make); // generic sources (OBDex) have no make
+  const same = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a)); };
+  return manual.length && manual.every((p) => same(p.make, v.make) && same(p.model, v.model)) ? 'exact_model' : level;
+}
+
 function postprocess(ctx, agentOut, LABELS) {
   const LEVELS = ['exact_model', 'make', 'generic', 'none'];
   const SAFETY = /frein|brake|direction|steering|surchauffe|overheat|temp[ée]rature|oil pressure|pression d.huile/i;
@@ -75,6 +86,11 @@ function postprocess(ctx, agentOut, LABELS) {
   const total = Number(raw.prob_total) || (raw.causes || []).reduce((s, c) => s + causeProb(c), 0) || causes.reduce((s, c) => s + c.prob, 0) || 1;
   causes.forEach((c) => { c.prob = Math.round(Math.min(c.prob / total, CEILING) * 1000) / 1000; });
 
+  // 3b. effective level: the search relaxes its filter (exact_model -> make -> generic) when fewer than 2 strong manual passages
+  // match the exact model, even if the passages it does return come from that model's manual. What the answer rests on is the
+  // passages the causes cite: if every cited manual passage is from the driver's make and model, it is an exact-model answer.
+  level = effectiveLevel(level, causes, byId, ctx.vehicle);
+
   // 4. grounded checks
   let checks = [];
   if (ctx.allow_new) {
@@ -108,6 +124,9 @@ function postprocess(ctx, agentOut, LABELS) {
   const top = causes[0];
   // small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
   let message = typeof raw.message_to_user === 'string' ? raw.message_to_user.split('\\n').join('\n') : '';
+  // the questions are sent after this message ("ci-dessous"); with no question left, a sentence asking to answer them is wrong (same in agent2.py)
+  message = checks.length ? message.replace(/ci[-\u2010\u2011 ]dessus/gi, 'ci-dessous').replace(/\babove\b/gi, 'below')
+    : message.replace(/[^.!?\n]*\b(r[ée]pond|answer)[^.!?\n]*\bquestions?\b[^.!?\n]*[.!?]?/gi, '').replace(/[ \t]+\n/g, '\n').trim();
   if (level !== 'exact_model' && !/g[ée]n[ée]ral|ce mod[èe]le exact|mod[èe]le exact|general information|exact model/i.test(message)) { // guaranteed by code: a small model forgets it
     const note = ctx.language === 'en' ? 'Careful: no manual for this exact model was found, the answer rests on general information or other vehicles.'
       : "Attention : aucun manuel de ce modèle exact n'a été trouvé, la réponse repose sur des informations générales ou d'autres véhicules.";

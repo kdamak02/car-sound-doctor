@@ -230,9 +230,14 @@ def test_a_lone_surviving_cause_is_not_shown_as_100_percent():
 def test_evidence_limits_whatever_the_model_says():
     """Regression of the scenarios: an unknown car (no exact-model manual) and a healthy-sounding engine can never give a firm fault."""
     firm = {"causes": [{"name": "Démarreur", "label": None, "prob": 0.95, "evidence": ["e"], "sources": [P1]}], "checks": [], "message_to_user": "Faites contrôler le démarreur."}
-    general = lambda q, v, k, **kw: {**search(q, v, k), "fallback_level": "generic"}  # noqa: E731
+    other_car = lambda r: [{**p, "make": "Renault", "model": "Clio"} if p.get("make") else p for p in r["passages"]]  # noqa: E731 (case: Peugeot 208)
+    general = lambda q, v, k, **kw: {**(r := search(q, v, k)), "fallback_level": "generic", "passages": other_car(r)}  # noqa: E731
     out = agent2.diagnose(fresh_case(), llm=llm_returning(firm), search=general)
     assert out["causes"][0]["prob"] == 0.7 and "aucun manuel de ce modèle exact" in out["message_to_user"]  # capped and flagged by code
+    # relaxed search, but every cited manual passage is from the driver's make and model: an exact-model answer (seen live on the Clio)
+    relaxed = lambda q, v, k, **kw: {**search(q, v, k), "fallback_level": "make"}  # noqa: E731
+    out = agent2.diagnose(fresh_case(), llm=llm_returning(firm), search=relaxed)
+    assert out["causes"][0]["prob"] == 0.95 and "aucun manuel" not in out["message_to_user"]
     healthy = fresh_case()
     healthy["audio"] = {"status": "ok", "label": "normal_startup", "context": "startup", "anomaly_score": 0.6, "confidence": "high", "top3": [{"label": "normal_startup", "prob": 0.9}],
                         "description": {"summary": "s"}, "warnings": []}

@@ -80,7 +80,7 @@ function prepare(c, P3, SYSTEM, LABELS, mode) {  // mode: 'tool' (default) or 'p
 
   return {
     case: c,
-    ctx: { n, allow_new: allowNew, asked: diagnosis.reduce((s, d) => s + d.checks.length, 0), language: lang,
+    ctx: { n, allow_new: allowNew, asked: diagnosis.reduce((s, d) => s + d.checks.length, 0), language: lang, vehicle: { make: v.make || null, model: v.model || null },
            // Agent 1 hears a healthy engine (normal class, unusualness < 0.8): no firm fault (cap in "Ground and decide")
            healthy_audio: !!(a && a.status === 'ok' && String(a.label || '').startsWith('normal') && a.anomaly_score != null && a.anomaly_score < 0.8 && a.confidence !== 'low') },
     system_prompt: SYSTEM[n === 1 ? 1 : 2],

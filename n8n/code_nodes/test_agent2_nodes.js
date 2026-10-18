@@ -214,14 +214,31 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
 {
   const firm = { causes: [{ name: 'Démarreur', label: null, prob: 0.95, evidence: ['e'], sources: [P1] }], checks: [], message_to_user: 'Faites contrôler le démarreur.' };
   const general = { ...JSON.parse(JSON.stringify(SEARCH)), fallback_level: 'generic' };
+  general.passages.forEach((p) => { if (p.make) { p.make = 'Renault'; p.model = 'Clio'; } }); // passages of another vehicle (case: Peugeot 208)
   const g = run(freshCase(), firm, general);
   assert.strictEqual(g.output.causes[0].prob, 0.7); assert(g.output.message_to_user.includes('aucun manuel de ce modèle exact'));
+  // relaxed search, but every cited manual passage is from the driver's make and model: exact-model answer, no note, no cap
+  const relaxed = { ...JSON.parse(JSON.stringify(SEARCH)), fallback_level: 'make' };
+  const r = run(freshCase(), firm, relaxed);
+  assert.strictEqual(r.fallback_level, 'exact_model'); assert(!r.output.message_to_user.includes('aucun manuel'));
+  assert.strictEqual(r.output.causes[0].prob, 0.95);
+  // only a generic source (OBDex) cited: the relaxed level stays
+  const o = run(freshCase(), { ...firm, causes: [{ ...firm.causes[0], sources: [PO] }] }, relaxed);
+  assert.strictEqual(o.fallback_level, 'make'); assert(o.output.message_to_user.includes('aucun manuel de ce modèle exact'));
   const hc = freshCase();
   hc.audio = { status: 'ok', label: 'normal_startup', context: 'startup', anomaly_score: 0.6, confidence: 'high', top3: [{ label: 'normal_startup', prob: 0.9 }], description: { summary: 's' }, warnings: [] };
   assert.strictEqual(prepare(hc, P3, SYSTEM, LABELS).ctx.healthy_audio, true);
   const h = run(hc, firm);
   assert.strictEqual(h.output.causes[0].prob, 0.5); assert.strictEqual(h.output.conclusive, false);
   hc.audio.anomaly_score = 0.9; assert.strictEqual(prepare(hc, P3, SYSTEM, LABELS).ctx.healthy_audio, false);
+}
+// --- the message never asks to answer questions that are not there, and the questions come after it ("ci-dessous")
+{
+  const ask = { causes: [{ name: 'Démarreur', label: null, prob: 0.9, evidence: ['e'], sources: [P1] }], checks: [], message_to_user: 'Faites contrôler le démarreur. Veuillez répondre à la question ci\u2011dessus.' };
+  const m = run(freshCase(1), ask).output.message_to_user;
+  assert(m.includes('démarreur') && !/question/.test(m), m);
+  const withChecks = { ...ask, checks: [{ q: 'Un clic ?', why: 'w', answer_type: 'yes_no', source: P1 }], message_to_user: 'Répondez aux questions ci\u2011dessus.' };
+  assert(run(freshCase(), withChecks).output.message_to_user.includes('ci-dessous'));
 }
 console.log('agent2 n8n nodes: all tests passed');
 })();
