@@ -96,7 +96,8 @@ function postprocess(ctx, agentOut, LABELS) {
   const conclusive = ctx.n === 1 && checks.length ? false : isConclusive;
   if (conclusive) checks = [];
   const top = causes[0];
-  const message = typeof raw.message_to_user === 'string' ? raw.message_to_user : '';
+  // small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
+  const message = typeof raw.message_to_user === 'string' ? raw.message_to_user.split('\\n').join('\n') : '';
   const output = {
     pass: ctx.n,
     causes,
