@@ -21,6 +21,28 @@ NS = uuid.UUID("a2a2a2a2-0000-4000-8000-000000000003")
 FRONT = (ROOT / "n8n/telegram_front/telegram_front.js").read_text("utf-8")
 LABELS_FR = {x["id"]: x["fr"] for x in load_labels(ROOT)["labels"]}
 
+sys.path.insert(0, str(ROOT / "prompts/eval"))
+from p1_prompts import PROMPTS as P1_VERSIONS  # noqa: E402
+from p2_p7_prompts import PROMPTS as P27_VERSIONS  # noqa: E402
+
+# the versions in use (see the Versions tables of the prompt files)
+LLM_JS = ("\nconst P1_PROMPT = " + json.dumps(P1_VERSIONS["v4"], ensure_ascii=False) + ";\nconst P2_PROMPT = " + json.dumps(P27_VERSIONS["p2"]["v3"], ensure_ascii=False)
+          + ";\nconst P7_PROMPT = " + json.dumps(P27_VERSIONS["p7"]["v4"], ensure_ascii=False) + ";\n") + r"""
+// a small local model (Ollama) writes the P1 extraction, the P2 question and the P7 summary; ANY failure returns null and the front falls back to code
+const OLLAMA = $env.OLLAMA_URL || 'http://host.docker.internal:11434';
+const LLM_ON = ($env.TELEGRAM_LLM || 'on') !== 'off';
+const LLM_MODEL = $env.TELEGRAM_LLM_MODEL || 'qwen2.5:7b';
+const askLLM = async (system, user, asJson) => {
+  if (!LLM_ON) return null;
+  try {
+    const r = await this.helpers.httpRequest({ method: 'POST', url: `${OLLAMA}/api/chat`, json: true, timeout: 90000,
+      body: { model: LLM_MODEL, stream: false, ...(asJson ? { format: 'json' } : {}), options: { temperature: 0, num_ctx: 4096 },
+              messages: [{ role: 'system', content: system }, { role: 'user', content: user }] } });
+    return String((r.message && r.message.content) || '').trim() || null;
+  } catch (e) { return null; }
+};
+"""
+
 PRELUDE = r"""
 const fs = require('fs');
 const BASE = $env.TELEGRAM_API_BASE || 'https://api.telegram.org';
@@ -60,7 +82,21 @@ try {
 } catch (e) { unlock(); throw e; }
 """
 
-HANDLE = PRELUDE + FRONT + SEND + r"""
+UNDERSTAND = PRELUDE + LLM_JS + r"""
+// prompt P1: read the car, the problem and the moment from the driver's free text (or the caption of the voice note)
+const u = $json;
+const m = u.message || null;
+const text = m ? String(m.text || m.caption || '').trim() : '';
+if (!m || !text || text.startsWith('/')) return { json: u };
+const chat = loadState().chats[String(m.chat.id)] || { stage: 'idle' };
+if (!(m.voice || m.audio || m.video_note || ['need_car', 'need_symptom'].includes(chat.stage))) return { json: u };  // only where the front waits for the car or the problem
+const raw = await askLLM(P1_PROMPT, text, true);
+let p1 = null;
+try { p1 = raw ? JSON.parse(raw) : null; } catch (e) { p1 = null; }
+return { json: { ...u, p1 } };
+"""
+
+HANDLE = PRELUDE + LLM_JS + FRONT + SEND + r"""
 const u = $json;
 const m = u.message || (u.callback_query && u.callback_query.message);
 if (!m) return { json: { chat_id: null, messages: [], run: null } };
@@ -69,6 +105,14 @@ const key = String(m.chat.id);
 const r = handle(st.chats[key], u, Date.now());
 st.chats[key] = r.state;
 saveState(st);
+// prompt P2: the LLM re-words the question for what is missing; its text is used only if it is one short French question
+for (const msg of r.messages) {
+  if (msg.ask && !msg.buttons) {
+    const q = await askLLM(P2_PROMPT, JSON.stringify({ connu: msg.ask.have, manquant: msg.ask.missing }), false);
+    if (q && checkQuestion(q)) msg.text = (msg.text.startsWith('Note vocale reçue. ') ? 'Note vocale reçue. ' : '') + q;
+  }
+  delete msg.ask;
+}
 if (u.callback_query) { try { await tg('answerCallbackQuery', { callback_query_id: u.callback_query.id }); } catch (e) { /* ignore */ } }
 await sendAll(m.chat.id, r.messages);  // the first answer goes out before the long agent run
 return { json: { chat_id: m.chat.id, run: r.run, state: r.state } };
@@ -94,12 +138,19 @@ try {
 }
 """
 
-REPLY = PRELUDE + FRONT + SEND + "\nconst LABELS_FR = " + json.dumps(LABELS_FR, ensure_ascii=False) + r""";
+REPLY = PRELUDE + LLM_JS + FRONT + SEND + "\nconst LABELS_FR = " + json.dumps(LABELS_FR, ensure_ascii=False) + r""";
 if (!$json.run) return { json: { done: true } };  // nothing was run: the answer was already sent
 const out = format($json.state, $json.run.kind, $json.reply, LABELS_FR);
 const st = loadState();
 st.chats[String($json.chat_id)] = out.state;
 saveState(st);
+// prompt P7: a short plain-text summary for the end; sent only if it passes the rules (checkSummary), else the fixed template
+if (out.summary_data) {
+  let summary = await askLLM(P7_PROMPT, JSON.stringify(out.summary_data), false);
+  const problems = summary ? checkSummary(summary, out.summary_data) : ['no answer'];
+  if (problems.length) summary = templateSummary(out.summary_data);
+  out.messages.push({ text: '🗣️ En résumé : ' + summary });
+}
 await sendAll($json.chat_id, out.messages);
 return { json: { done: true, stage: out.state.stage } };
 """
@@ -127,12 +178,13 @@ nodes = [
     {"id": uid("Every 5 seconds"), "name": "Every 5 seconds", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 0],
      "parameters": {"rule": {"interval": [{"field": "seconds", "secondsInterval": 5}]}}},
     code("Poll Telegram", POLL, [260, 0], "runOnceForAllItems"),
-    code("Handle update", HANDLE, [520, 0]),
-    code("Run agents", RUN, [780, 0]),
-    code("Reply", REPLY, [1040, 0]),
-    code("Unlock", UNLOCK, [1300, 0], "runOnceForAllItems"),
+    code("Understand message (P1)", UNDERSTAND, [520, 0]),
+    code("Handle update", HANDLE, [780, 0]),
+    code("Run agents", RUN, [1040, 0]),
+    code("Reply", REPLY, [1300, 0]),
+    code("Unlock", UNLOCK, [1560, 0], "runOnceForAllItems"),
 ]
-connections = {"Every 5 seconds": link("Poll Telegram"), "Poll Telegram": link("Handle update"), "Handle update": link("Run agents"),
+connections = {"Every 5 seconds": link("Poll Telegram"), "Poll Telegram": link("Understand message (P1)"), "Understand message (P1)": link("Handle update"), "Handle update": link("Run agents"),
                "Run agents": link("Reply"), "Reply": link("Unlock")}
 workflow = {"name": "Car Sound Doctor - Telegram front", "nodes": nodes, "connections": connections, "active": False,
             "settings": {"executionOrder": "v1"}, "tags": [], "pinData": {}}

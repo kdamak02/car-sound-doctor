@@ -50,12 +50,16 @@ function postprocess(ctx, agentOut, LABELS) {
   raw = raw || {};
 
   // 3. grounded causes
+  const CEILING = 0.95; // no cause is shown above this: reading a manual does not prove a cause
+  const causeProb = (c) => {
+    const p = Math.max(Number(c.prob) || 0, 0);
+    return String(c.status || '').toLowerCase() === 'contradicted' ? Math.min(p, 0.05) : p; // P5: an answer shows it is not the cause
+  };
   let causes = [];
   for (const c of raw.causes || []) {
     const ids = (c.sources || []).map(cleanId).filter((s) => byId[s]);
     if (!ids.length || !c.name) continue;
-    let prob = Math.max(Number(c.prob) || 0, 0);
-    if (String(c.status || '').toLowerCase() === 'contradicted') prob = Math.min(prob, 0.05); // P5: an answer shows it is not the cause
+    const prob = causeProb(c);
     const label = known.has(c.label) ? c.label : null;
     causes.push({
       name: readable(String(c.name).trim(), label),
@@ -66,8 +70,10 @@ function postprocess(ctx, agentOut, LABELS) {
   }
   causes = causes.sort((a, b) => b.prob - a.prob).slice(0, 5);
   if (!causes.length) return fail('the passages support no cause (or the model cited none)');
-  const total = causes.reduce((s, c) => s + c.prob, 0) || 1;
-  causes.forEach((c) => { c.prob = Math.round((c.prob / total) * 1000) / 1000; });
+  // normalise over EVERY cause the model proposed (supportFilter passes their total in `prob_total`): dropping an uncited or unsupported
+  // cause must not hand its share to the survivors, or a lone cause would show 100 %. A contradicted cause still gives its share back.
+  const total = Number(raw.prob_total) || (raw.causes || []).reduce((s, c) => s + causeProb(c), 0) || causes.reduce((s, c) => s + c.prob, 0) || 1;
+  causes.forEach((c) => { c.prob = Math.round(Math.min(c.prob / total, CEILING) * 1000) / 1000; });
 
   // 4. grounded checks
   let checks = [];
@@ -90,14 +96,23 @@ function postprocess(ctx, agentOut, LABELS) {
     }
   }
 
-  // 5. decisions
+  // 5. limits the evidence imposes, whatever the model says (same as agent2.py: NON_EXACT_MAX, HEALTHY_MAX)
+  const cap = Math.min(level !== 'exact_model' ? 0.7 : 1, ctx.healthy_audio ? 0.5 : 1);
+  causes.forEach((c) => { c.prob = Math.min(c.prob, cap); });
+
+  // 6. decisions
   const second = causes.length > 1 ? causes[1].prob : 0;
   const isConclusive = causes[0].prob >= CONCLUSIVE_PROB && causes[0].prob - second >= CONCLUSIVE_GAP;
   const conclusive = ctx.n === 1 && checks.length ? false : isConclusive;
   if (conclusive) checks = [];
   const top = causes[0];
   // small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
-  const message = typeof raw.message_to_user === 'string' ? raw.message_to_user.split('\\n').join('\n') : '';
+  let message = typeof raw.message_to_user === 'string' ? raw.message_to_user.split('\\n').join('\n') : '';
+  if (level !== 'exact_model' && !/g[ée]n[ée]ral|ce mod[èe]le exact|mod[èe]le exact|general information|exact model/i.test(message)) { // guaranteed by code: a small model forgets it
+    const note = ctx.language === 'en' ? 'Careful: no manual for this exact model was found, the answer rests on general information or other vehicles.'
+      : "Attention : aucun manuel de ce modèle exact n'a été trouvé, la réponse repose sur des informations générales ou d'autres véhicules.";
+    message = (note + ' ' + message).trim();
+  }
   const output = {
     pass: ctx.n,
     causes,
@@ -142,5 +157,7 @@ async function supportFilter(agentOut, search, filters, top, hint) {
     }
     keep.push(c);
   }
-  return { ...agentOut, output: { ...raw, causes: keep } };
+  // the share of the causes dropped here stays unexplained (see postprocess): remember the total of everything the model proposed
+  const prob_total = raw.causes.reduce((s, c) => s + (String(c.status || '').toLowerCase() === 'contradicted' ? Math.min(Math.max(Number(c.prob) || 0, 0), 0.05) : Math.max(Number(c.prob) || 0, 0)), 0);
+  return { ...agentOut, output: { ...raw, causes: keep, prob_total } };
 }

@@ -60,3 +60,36 @@ The brief also says: *justification matters more than complexity* and *reporting
 6. **Agent 3's guides are generic** for our faults and its validator accepts them (`NOTE_FOR_AGENT3.md`).
 7. **Groq free tier**: 200,000 tokens per day per model for the whole team; one run needs about 7,000 (`HANDOVER.md`, `preflight.py`).
 8. **Not tested**: a real Telegram bot, a real engine recording, several users at once, the 30-minute answer timeout.
+## F. Whole-project check against the exam brief (Advanced DL final project), 2026-10-18
+
+Done by reading `Advanced DL-Exam (1).pdf` (3 pages) and checking every point against the repository. OK = met and evidenced; PARTIAL = met with a gap; OPEN = not done.
+
+| Brief | Status | Evidence | Gap and owner |
+|---|---|---|---|
+| 1. Automation platform, triggerable end to end | PARTIAL | n8n: `full_chain_{ollama,groq,gemini}.json` (voice note + case in, `{agent1, agent2, agent3}` out), `telegram_front.json` (polling bot), `start_full_chain.ps1`, `tests/live_check.py` (ALL PASS) | the Telegram bot has only been run against a fake Telegram, not a real bot (needs a token from @BotFather: team) |
+| 2. Prompt engineering: versioned library, technique, failure cases, fixes, before/after per key prompt | PARTIAL | `prompts/PROMPT_LIBRARY.md` (one file) + one file per prompt. P1, P2, P3, P4, P5, P7: versions and measured before/after (P1 regex 83 % -> v4 98 % of fields and retrieval hit 4/8 -> 8/8; P2 3/8 -> 8/8; P7 0/6 -> 6/6 with a code guardrail; P4/P5 in the earlier sections) | P6 (Agent 3): only the v4 text exists; its history v1-v3 and before/after are missing: **group C** |
+| 3. RAG: own corpus, chunking with size and overlap and why, embeddings and store, retrieval setup, evaluation, two chunkings compared | PARTIAL | Agent 2: 6 owner's manuals + OBDex, chunking by heading vs fixed 500/50 compared, BGE-M3 + BM25 + reranker, 30 queries (`agent2_diagnosis/tests/eval_results.md`). Agent 3: its own RAG (Qdrant, recursive 500/50 and structure chunking, hybrid RRF, reranker); first retrieval evaluation written today: `evaluation/run_agent3_retrieval.py`, 5/6 retrieval-type fixtures found (recall@5 0.83, indicative) | Agent 2's vector store is a numpy stand-in, not the Qdrant of the architecture; the shared `rag/ingest` of B1 is an empty README; Agent 3 has no gold set of its own: **B1, group C** |
+| 4. Multi-agent, justified architecture | PARTIAL | three agents, JSON contracts, sequential chain with human-in-the-loop, tested end to end; B2's justification in `report/agent2_sections.md` | the report sections 1, 2, 6 (architecture and tools, C1/C2) are not written |
+| 5. Multimodality | PARTIAL | audio in: OGG/Opus voice note -> Agent 1 (real model, tested on real public clips) -> prompt P3 -> Agent 2 | speech out (the architecture's TTS, Piper) and Whisper are not built; P7 text is ready for a synthesiser |
+| Deliverable: workflow or repository with run instructions | OK | `agent2_diagnosis/HANDOVER.md`, `start_full_chain.ps1`, `n8n/workflows/` | |
+| Deliverable: technical report, 8 pages | OPEN | B2's sections are written (`report/agent2_sections.md`) | sections 1, 2, 4, 5 (B1/A2), 6, 8 and the assembly to 8 pages: **team** |
+| Deliverable: prompt library as a separate file | OK | `prompts/PROMPT_LIBRARY.md` | P6 history (group C) |
+| Deliverable: short retrieval evaluation | OK | `agent2_diagnosis/tests/eval_results.md`, `rag/eval/queries.jsonl`, `evaluation/run_agent3_retrieval.py` | |
+| Final session: demo, every member speaks | OPEN | `DEMO_DAY.md`, `DEMO_TRANSCRIPT.md`, `tests/preflight.py` | rehearsal, real bot, engine recording of group A |
+
+### End-to-end scenarios (`evaluation/run_scenarios.py` -> `evaluation/scenarios_results.csv`), local model Ollama qwen2.5:7b, real chain
+| id | scenario | result | correct |
+|---|---|---|---|
+| s01 | clear known fault (starter, real clip) | starter 88 %, 2 rounds, guide, 63 s | yes |
+| s02 | safety fault (oil pressure) | `insufficient` on pass 2: the 7B model's retrieval fails | no |
+| s03 | speech only instead of an engine | Agent 1 accepts the speech (`speech_ratio` 0, status ok), Agent 2 answers "alternator 80 %" | no (Agent 1: `NOTE_FOR_AGENT1.md`) |
+| s04 | unknown car (Tesla) | answered from other vehicles; now capped at 70 % and flagged "aucun manuel de ce modèle exact" by code | yes |
+| s05 | prompt injection in the text | normal starter diagnosis, the order ignored | yes |
+| s06 | healthy engine | still invents "seatbelt not fastened 70 %": Agent 1's normal class has unusualness 0.91 so the healthy cap does not apply | no |
+3 of 6. Not run: "user never answers (timeout)" (the 30-minute wait is not implemented) and "ambiguous sound". With Groq `gpt-oss-120b` (budget used up today) the same scenarios were not run; expect better answers but the findings on Agent 1 stay.
+
+### Fixes made during this check
+- A lone surviving cause was shown as "100 %" (re-normalisation after dropping uncited causes): now capped at 95 % and dropped causes keep their share.
+- Code guarantees: no exact-model manual -> probability at most 70 % and an explicit note; Agent 1 hears a healthy engine -> at most 50 %.
+- The reranker candidate pool is 20 on the GPU (finds more lay phrasings; evaluation unchanged: hit 0.846, 4/4 rejected).
+- P1 now also rewrites the problem in the wording of a manual: retrieval hit 8/8 against 4/8 for the raw text.

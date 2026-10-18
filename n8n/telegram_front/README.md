@@ -5,6 +5,12 @@ Conversation: voice note -> car (free text: make, model, year, fuel) -> symptom 
 skipped when the sentence says it) -> Agent 1 + Agent 2 -> checks one at a time (buttons or text) -> pass 2 -> Agent 2 answer + Agent 3 guide.
 Commands: /start, /annuler. French only. Unusable recording -> asks for a new one. Agent 1 down or slow -> text only. No answer in the manuals -> "consultez un mécanicien".
 
+## Prompts used by the bot (all measured, see `prompts/`)
+- **P1 extraction** (`Understand message (P1)`): a small local model (Ollama `qwen2.5:7b`) reads the car, the problem and the moment from the driver's free text, so "Ma Clio de 2015 diesel ne démarre pas, un clic" is understood in one message; it also writes the problem in the wording of a manual, which makes the search find the right page (hit 8/8 against 4/8 for the raw text).
+- **P2 clarification** (`Handle update`): when something is missing, the model asks one short question about it only; the text is used only if it is one short French question, else a fixed question.
+- **P7 final message** (`Reply`): a short plain-text summary after the detailed answer ("En résumé"), ready for a speech synthesiser (not built); a code guardrail refuses an unsafe or invented text and sends a template instead.
+All three fall back to code (regex parser, fixed questions, template) when Ollama is down or `TELEGRAM_LLM=off` in the root `.env`; `OLLAMA_URL` (default `http://host.docker.internal:11434`) and `TELEGRAM_LLM_MODEL` can be changed. The first call after Ollama starts is slow (model load).
+
 ## Files
 - `telegram_front.js`: the conversation logic (pure functions). `test_telegram_front.js`: node test, in CI.
 - `build_telegram_front.py` -> `n8n/workflows/telegram_front.json` (6 Code nodes, polls getUpdates every 5 s: no public URL or tunnel needed).

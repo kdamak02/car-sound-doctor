@@ -18,7 +18,7 @@ Telegram (NOT in the repo yet) -> n8n -> Agent 1 (audio, :8001) -> Agent 2 (diag
 | Agent 3, repair guide | `agent3_repair/` (group C, Groq model) | **measured** returns validated guides; content is generic (see section 5) |
 | Hand-over Agent 2 -> 3 | `agent2_diagnosis/to_agent3.py` and `n8n/code_nodes/agent2_to_agent3.js` (same rules, same tests) | **measured** end to end |
 | Test page | `agent2_diagnosis/streamlit_app.py` (:8501), one page for the three agents: a status card per agent, then one section per agent with what it received and produced + its raw JSON, upload or demo clip for Agent 1, a button to ask Agent 3 right away from a provisional diagnosis | 7 headless tests pass |
-| Telegram front (voice note, car, symptom, context buttons, checks as buttons, final guide) | `n8n/telegram_front/`, `n8n/workflows/telegram_front.json` | **measured** with a fake Telegram (`mock_telegram.py`); **not tested** with a real bot: see `n8n/telegram_front/README.md` for the 5 steps (BotFather token in the root `.env`) |
+| Telegram front (voice note, car, symptom, context buttons, checks as buttons, final guide; prompts P1 extraction, P2 clarification, P7 final summary on a local Ollama model with code fallbacks) | `n8n/telegram_front/`, `n8n/workflows/telegram_front.json` | **measured** with a fake Telegram (`mock_telegram.py`); **not tested** with a real bot: see `n8n/telegram_front/README.md` for the 5 steps (BotFather token in the root `.env`) |
 
 Branches: `integration/agent2-agent3` (everything, used by the whole team), `agent2/reranker` (PR 2: Agent 2 only), `agent2/diagnosis-logic` (PR 1).
 Do not force-push `integration/agent2-agent3`: teammates push to it. Merge `origin/integration/agent2-agent3` before pushing.
@@ -89,6 +89,7 @@ Convert to a voice note: `ffmpeg -i x.wav -ar 48000 -ac 1 -c:a libopus -b:a 48k 
 
 1. Ask group A for the demo recording and run it through `/webhook/agent2-diagnose-audio`; check label, confidence and anomaly score; keep a backup recording.
 2. Create the real bot with @BotFather and run it (`n8n/telegram_front/README.md`, step "Set up the real bot"); send a voice note; check several chats and the 30-minute timeout idea of ARCHITECTURE.md §7 (not implemented: the state just waits).
+2b. Send `NOTE_FOR_AGENT1.md` to group A (speech not rejected, Telegram compression flips a class, slow first call) and `NOTE_FOR_AGENT3.md` to group C. Re-run `python evaluation/run_scenarios.py` on Groq when its daily budget is back (today's results are on the local 7B model: 3 of 6, see `agent2_diagnosis/REQUIREMENTS_CHECK.md` section F) and `python evaluation/run_agent3_retrieval.py`.
 3. Send the Agent 3 note (problem 1) to group C; ask B1 about the `rerank` flag and the `maintenance` section (Agent 2 and Agent 3 both read it).
 4. Open the PR for `integration/agent2-agent3` after telling the team: it contains about 90 MB of Agent 3 data. The file `agent3_repair/data/qdrant_db/.../storage.sqlite` changes whenever Agent 3 runs: do not commit it (`git checkout --` it after stopping Agent 3).
 5. Demo day: follow `agent2_diagnosis/DEMO_DAY.md` and run `python agent2_diagnosis/tests/preflight.py` before starting.

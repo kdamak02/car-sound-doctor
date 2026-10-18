@@ -34,7 +34,7 @@ MIN_SCORE = float(os.getenv("DEV_RAG_MIN_SCORE", "0.45"))  # cosine below this =
 RERANK = os.getenv("DEV_RAG_RERANK", "true").lower() == "true"  # cross-encoder over the best candidates (the request flag `rerank` can turn it off)
 RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")  # Apache-2.0, multilingual, 568M parameters
 RERANK_DEVICE = os.getenv("DEV_RAG_RERANK_DEVICE", "cpu")  # the 8 GB GPU belongs to Ollama
-RERANK_POOL = int(os.getenv("DEV_RAG_RERANK_POOL", "8"))  # candidates sent to the cross-encoder
+RERANK_POOL = int(os.getenv("DEV_RAG_RERANK_POOL", "20" if RERANK_DEVICE == "cuda" else "8"))  # candidates sent to the cross-encoder (20 on the GPU: finds more lay phrasings, same evaluation numbers; 8 on the CPU: speed)
 RERANK_MIN = float(os.getenv("DEV_RAG_RERANK_MIN", "0.03"))  # reranker score (0-1) under which a passage is not an answer
 RERANK_MIN_FALLBACK = float(os.getenv("DEV_RAG_RERANK_MIN_FALLBACK", "0.15"))  # stricter when the vehicle level is relaxed (make / generic): weak matches from other cars are noise
 RERANK_ORDER = os.getenv("DEV_RAG_RERANK_ORDER", "false").lower() == "true"  # reorder by cross-encoder score (default: keep the hybrid order, use the score only to drop)

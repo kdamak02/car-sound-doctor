@@ -73,7 +73,7 @@ const r1 = run(freshCase(), GOOD);
 assert.strictEqual(r1.insufficient, false);
 const o1 = r1.output;
 assert.deepStrictEqual(o1.causes.map((c) => c.name), ['Courroie usée', 'Direction assistée']); // invented + uncited dropped
-assert(Math.abs(o1.causes.reduce((s, c) => s + c.prob, 0) - 1) < 0.01);
+assert.deepStrictEqual(o1.causes.map((c) => c.prob), [0.389, 0.056]); // dropped causes keep their share (no inflation of the survivors)
 assert.deepStrictEqual(o1.checks.map((c) => c.id), ['c1', 'c2', 'c3']);
 assert.strictEqual(o1.checks[2].answer_type, 'free_text');
 assert.strictEqual(o1.pass, 1); assert.strictEqual(o1.conclusive, false); assert.strictEqual(o1.safety_stop, false);
@@ -209,5 +209,19 @@ assert(prepare(bad, P3, SYSTEM, LABELS).user_message.includes('No usable audio')
   assert.strictEqual(h.checks.length, hc.check_answers.length); assert(h.checks.every((k) => k.answer !== 'Not checked'));
   assert.strictEqual(toAgent3(hc, { ...hout, conclusive: false, checks: [{ id: 'c1' }] }).diagnosis.status, 'probable');
   assert.strictEqual(toAgent3(hc, { ...hout, conclusive: false, checks: [] }).diagnosis.status, 'inconclusive');
-  console.log('agent2 n8n nodes: all tests passed');
+  
+// --- evidence limits (same as agent2.py): no manual of the exact model, or a healthy-sounding engine, never gives a firm fault
+{
+  const firm = { causes: [{ name: 'Démarreur', label: null, prob: 0.95, evidence: ['e'], sources: [P1] }], checks: [], message_to_user: 'Faites contrôler le démarreur.' };
+  const general = { ...JSON.parse(JSON.stringify(SEARCH)), fallback_level: 'generic' };
+  const g = run(freshCase(), firm, general);
+  assert.strictEqual(g.output.causes[0].prob, 0.7); assert(g.output.message_to_user.includes('aucun manuel de ce modèle exact'));
+  const hc = freshCase();
+  hc.audio = { status: 'ok', label: 'normal_startup', context: 'startup', anomaly_score: 0.6, confidence: 'high', top3: [{ label: 'normal_startup', prob: 0.9 }], description: { summary: 's' }, warnings: [] };
+  assert.strictEqual(prepare(hc, P3, SYSTEM, LABELS).ctx.healthy_audio, true);
+  const h = run(hc, firm);
+  assert.strictEqual(h.output.causes[0].prob, 0.5); assert.strictEqual(h.output.conclusive, false);
+  hc.audio.anomaly_score = 0.9; assert.strictEqual(prepare(hc, P3, SYSTEM, LABELS).ctx.healthy_audio, false);
+}
+console.log('agent2 n8n nodes: all tests passed');
 })();
