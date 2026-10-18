@@ -8,7 +8,7 @@ Goal: show a real **AI Agent node calling a RAG tool**, answers **with citations
 1. Docker Desktop running, then `.\local\start_all.ps1` (n8n :5678, Ollama :11434, dev RAG :8002, Streamlit :8501). The dev RAG needs about 1 minute to load; check `http://localhost:8002/health` shows `"rerank":true`.
 2. n8n: workflow "Agent 2 - diagnosis and checks" is **active** (Ollama build: `LLM=ollama RAG_URL=http://host.docker.internal:8002/search python agent2_diagnosis/build_workflow.py`, import, activate).
 3. Warm up: run `clio_starter_pass1.json` once (first call loads the models, 1 to 2 minutes). Do not restart anything after this.
-4. Open: n8n workflow canvas (tab 1), Streamlit page (tab 2), `tests/eval_results.md` (tab 3), a pre-recorded run (screen recording of the same scenario, tab 4: the fallback).
+4. Open: n8n workflow canvas (tab 1), Streamlit page (tab 2), `tests/eval_results.md` (tab 3), `DEMO_TRANSCRIPT.md` (tab 4: the fallback).
 5. A run takes 1.5 to 2.5 minutes with CPU reranking. If the room is short on time use `DEV_RAG_RERANK=false` (restart the dev RAG before the demo, never during): runs take about 40 s, and say so.
 
 ## Script
@@ -27,7 +27,7 @@ Goal: show a real **AI Agent node calling a RAG tool**, answers **with citations
 
 ## If something breaks
 - **n8n returns "Error in workflow"** (the 7B model can loop): run it once more; the workflow then answers `insufficient` (no invented answer).
-- **Run takes more than 3 minutes**: switch to the pre-recorded run (tab 4) and say it is a recording.
+- **Run takes more than 3 minutes**: show `DEMO_TRANSCRIPT.md`.
 - **Docker or n8n down**: Streamlit alone does not work; show the recording and run `pytest agent2_diagnosis/tests` and `node n8n/code_nodes/test_agent2_nodes.js` live (no network, a few seconds) to show the logic is tested.
 - **Never** restart n8n, Ollama or the dev RAG mid-demo.
 

@@ -80,7 +80,7 @@ Cases that the manuals cover (`agent2_diagnosis/tests/cases/README.md`): Clio st
 3. Send the Agent 3 note (problem 1) to group C; ask B1 about the `rerank` flag and the `maintenance` section (Agent 2 and Agent 3 both read it).
 4. Open the PR for `integration/agent2-agent3` after telling the team: it contains about 90 MB of Agent 3 data. The file `agent3_repair/data/qdrant_db/.../storage.sqlite` changes whenever Agent 3 runs: do not commit it (`git checkout --` it after stopping Agent 3).
 5. Demo day: follow `agent2_diagnosis/DEMO_DAY.md` and run `python agent2_diagnosis/tests/preflight.py` before starting.
-6. Finish the report (`report/agent2_sections.md` is a draft), pre-record a demo run (`agent2_diagnosis/DEMO.md` is the script), prepare answers to jury questions (same file).
+6. Finish the report (`report/agent2_sections.md` is a draft), no screen recording will be made (decision): plan B is `agent2_diagnosis/DEMO_TRANSCRIPT.md` (`agent2_diagnosis/DEMO.md` is the script), prepare answers to jury questions (same file).
 6. Optional: row-level chunking of the cause tables; more evaluation queries; a second labeller.
 
 ## 7. Troubleshooting

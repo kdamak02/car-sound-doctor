@@ -22,7 +22,7 @@ OPEN = not done, TEAM = depends on other groups.
 | Technical report, 8 pages max, covering the five points | PARTIAL / TEAM | B2's sections are written: `report/agent2_sections.md` (LLM choice, Agent 2 architecture and integration, retrieval evaluation, what did not work); the team report still has to be assembled and cut to 8 pages |
 | Prompt library as a separate file | OK | `prompts/` (one file per prompt, index in `prompts/README.md`) |
 | Short retrieval evaluation (queries, results, comments) | OK | `rag/eval/queries.jsonl`, `agent2_diagnosis/tests/eval_results.md`, `tests/eval_matrix.jsonl` |
-| Live demo 15 min + 10 min questions | PARTIAL | `agent2_diagnosis/DEMO_DAY.md` (checklist, 6-minute script, fallbacks, questions), `agent2_diagnosis/tests/preflight.py`; needs the real bot, the recording from group A and a backup video |
+| Live demo 15 min + 10 min questions | PARTIAL | `agent2_diagnosis/DEMO_DAY.md` (checklist, 6-minute script, fallbacks, questions), `agent2_diagnosis/tests/preflight.py`; needs the real bot and the engine recording from group A; no screen recording (plan B: `DEMO_TRANSCRIPT.md`) |
 
 ## C. Grading criteria (weights of the brief)
 
