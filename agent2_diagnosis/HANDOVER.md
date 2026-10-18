@@ -17,7 +17,7 @@ Telegram (NOT in the repo yet) -> n8n -> Agent 1 (audio, :8001) -> Agent 2 (diag
 | Agent 2 logic, prompts, RAG | `agent2_diagnosis/` (`agent2.py` = reference, `dev_rag/` = search service stand-in), `prompts/P3-P5`, `n8n/code_nodes/agent2_*.js` | 24 Python tests + Node tests pass |
 | Agent 3, repair guide | `agent3_repair/` (group C, Groq model) | **measured** returns validated guides; content is generic (see section 5) |
 | Hand-over Agent 2 -> 3 | `agent2_diagnosis/to_agent3.py` and `n8n/code_nodes/agent2_to_agent3.js` (same rules, same tests) | **measured** end to end |
-| Test page | `agent2_diagnosis/streamlit_app.py` (:8501), switch "Chaîne complète" for the three agents | 6 headless tests pass |
+| Test page | `agent2_diagnosis/streamlit_app.py` (:8501), one page for the three agents: a status card per agent, then one section per agent with what it received and produced + its raw JSON, upload or demo clip for Agent 1, a button to ask Agent 3 right away from a provisional diagnosis | 7 headless tests pass |
 | Telegram front (voice note, car, symptom, context buttons, checks as buttons, final guide) | `n8n/telegram_front/`, `n8n/workflows/telegram_front.json` | **measured** with a fake Telegram (`mock_telegram.py`); **not tested** with a real bot: see `n8n/telegram_front/README.md` for the 5 steps (BotFather token in the root `.env`) |
 
 Branches: `integration/agent2-agent3` (everything, used by the whole team), `agent2/reranker` (PR 2: Agent 2 only), `agent2/diagnosis-logic` (PR 1).
@@ -49,7 +49,7 @@ Regenerate any of them: `AGENT1=true AGENT3=true LLM=ollama|groq RAG_URL=http://
 python agent2_diagnosis/tests/preflight.py     # everything up? webhooks active? Groq budget?
 python agent2_diagnosis/tests/live_check.py    # voice clip -> Agent 1 -> Agent 2 (2 passes) -> Agent 3: PASS/FAIL per agent, about 1 minute on Groq
 ```
-or open the test page (http://localhost:8501, started by `start_full_chain.ps1` in full-chain mode): upload `data/audio/demo_clips/demo_failed_start.ogg`, press "Lancer la chaîne", answer the checks, press "Envoyer mes réponses". **Measured** on 2026-10-18 (Groq `gpt-oss-120b`): `live_check.py` ALL PASS in about 40 s; the same flow through the page with a real browser upload showed Agent 1's card, pass 1 with four cited checks, pass 2 conclusive and Agent 3's guide (validation OK, but generic).
+or open the test page (http://localhost:8501, started by `start_full_chain.ps1`): the demo clip is selected by default (or upload `data/audio/demo_clips/demo_failed_start.ogg`), press "Lancer les 3 agents", answer the checks, press "Envoyer mes réponses". **Measured** on 2026-10-18 (Groq `gpt-oss-120b`): `live_check.py` ALL PASS in about 40 s; the same flow through the page with a real browser upload showed Agent 1's card, pass 1 with four cited checks, pass 2 conclusive and Agent 3's guide (validation OK, but generic).
 
 ```bash
 # the whole chain, one call per pass (a voice note + the case; pass 1 asks checks)

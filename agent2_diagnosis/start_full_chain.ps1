@@ -43,7 +43,7 @@ if (-not (Listening 8003)) {   # Agent 3 (needs agent3_repair\.env)
     Start-Hidden $Python "-m uvicorn api:app --app-dir agent3_repair --host 127.0.0.1 --port 8003" $repo
 }
 if (-not (Listening 8501)) {   # test page (opens in full-chain mode: audio upload, Agent 1 + 2 + 3)
-    $env:AGENT2_FULL_CHAIN = "1"
+    $env:AGENT3_URL = "http://127.0.0.1:8003/generate"
     Start-Hidden $Python "-m streamlit run agent2_diagnosis\streamlit_app.py --server.headless true --server.address localhost --server.port 8501 --browser.gatherUsageStats false" $repo
 }
 

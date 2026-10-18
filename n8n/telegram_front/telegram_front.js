@@ -43,7 +43,7 @@ const ctxButtons = () => [Object.keys(CONTEXTS).map((k) => ({ text: CONTEXTS[k],
 
 function buildCase(s, chatId, now) {
   return {
-    case_id: 'tg_' + chatId + '_' + now, chat_id: String(chatId), status: 'extracted', round: 0,
+    case_id: 'tg_' + chatId + '_' + now, chat_id: String(chatId), status: 'collecting_info', round: 0,
     created_at: new Date(now).toISOString(),
     user_input: { text: `${s.car.make} ${s.car.model} ${s.car.year}. ${s.symptom}`, voice_transcript: null, language: 'fr', audio_file_id: s.file_id },
     vehicle: { make: s.car.make, model: s.car.model, year: s.car.year, fuel: s.car.fuel, mileage_km: null },

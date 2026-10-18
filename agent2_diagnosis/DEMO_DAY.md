@@ -5,7 +5,7 @@ Replaces the Agent 2 only script in `DEMO.md` for the defense. Facts were measur
 ## A. One or two days before
 - [ ] **Engine recording**: group A prepares it (starter problem, context `startup`); ask them for it. Run it once through `POST /webhook/agent2-diagnose-audio` and check the label, confidence and unusualness. Keep their backup recording and the result.
 - [ ] **Real bot**: create it with @BotFather, put the token in the root `.env` (`TELEGRAM_BOT_TOKEN=`; `TELEGRAM_API_BASE` must NOT be set), recreate n8n, activate `telegram_front.json` and one `full_chain_*.json` (steps in `n8n/telegram_front/README.md`). Do a full conversation from your phone.
-- [ ] **No recording is made** (decision): plan B is the saved transcript `DEMO_TRANSCRIPT.md` on a slide, the test page in "Chaîne complète" mode (same chain, no phone) and the offline tests run live.
+- [ ] **No recording is made** (decision): plan B is the saved transcript `DEMO_TRANSCRIPT.md` on a slide, the test page (same chain, no phone: three agent cards, "Lancer les 3 agents") and the offline tests run live.
 - [ ] **Model choice** (decide now, write it down):
   - Groq `gpt-oss-120b`: best quality, about 35-60 s per pass, but 200,000 tokens per day shared by the team. Run no test batches in the 24 h before.
   - Ollama `qwen2.5:7b`: no quota, 40-70 s per pass with the RAG on the CPU (reranker on the GPU conflicts with Ollama's memory). Workable but weaker answers.

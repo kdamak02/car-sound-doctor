@@ -36,8 +36,24 @@ class FakeResponse:
         return self._body
 
 
+RUN = "Lancer les 3 agents"
+
+
 def click(at, label):
     next(b for b in at.button if b.label == label).click()
+
+
+def open_page():
+    return AppTest.from_file(APP, default_timeout=30).run()
+
+
+def run_agents(at):
+    """Submit the form with the demo clip turned off (text only: deterministic whether or not the git-ignored clip exists)."""
+    for c in at.checkbox:
+        if "démonstration" in c.label:
+            c.set_value(False)
+    click(at, RUN)
+    at.run()
 
 
 def test_two_pass_flow():
@@ -48,13 +64,12 @@ def test_two_pass_flow():
         return FakeResponse(PASS1 if len(sent) == 1 else PASS2)
 
     with patch("requests.post", fake_post):
-        at = AppTest.from_file(APP, default_timeout=30).run()
+        at = open_page()
         assert not at.exception
-        click(at, "Lancer l'Agent 2")
-        at.run()
+        run_agents(at)
         assert not at.exception
-        # pass 1 request is a valid case record, round 0, with the Agent 1 style audio block
-        assert errors("case_record", sent[0]) == [] and sent[0]["round"] == 0 and sent[0]["audio"]["label"] == "dead_battery"
+        # pass 1 request is a valid case record, round 0 (no audio block: Agent 1 produces it from a recording)
+        assert errors("case_record", sent[0]) == [] and sent[0]["round"] == 0 and "audio" not in sent[0]
         text = " ".join(m.value for m in at.markdown)
         assert "Courroie usée" in text and "70 %" in text and "Fissures sur la courroie" in text
         # the send button stays disabled until every check is answered
@@ -79,17 +94,15 @@ def test_two_pass_flow():
 ])
 def test_n8n_errors_are_explained(response, expected):
     with patch("requests.post", lambda *a, **k: response):
-        at = AppTest.from_file(APP, default_timeout=30).run()
-        click(at, "Lancer l'Agent 2")
-        at.run()
+        at = open_page()
+        run_agents(at)
         assert any(expected in e.value for e in at.error)
 
 
 def test_insufficient_answer_is_shown():
     with patch("requests.post", lambda *a, **k: FakeResponse({"insufficient": True, "reason": "no manual passages"})):
-        at = AppTest.from_file(APP, default_timeout=30).run()
-        click(at, "Lancer l'Agent 2")
-        at.run()
+        at = open_page()
+        run_agents(at)
         assert not at.exception and any("no manual passages" in w.value for w in at.warning)
 
 
@@ -103,21 +116,39 @@ def test_full_chain_shows_the_three_agents():
           "validation": {"valid": True, "citations_valid": True, "safety_passed": True}}
     reply = {"agent1": a1, "agent2": PASS2, "agent3": a3}
     with patch("requests.post", lambda *a, **k: FakeResponse(reply)):
-        at = AppTest.from_file(APP, default_timeout=30).run()
-        at.toggle[0].set_value(True)
-        at.run()
-        click(at, "Lancer la chaîne")
-        at.run()
+        at = open_page()
+        run_agents(at)
         assert not at.exception
-        text = " ".join(m.value for m in list(at.markdown) + list(at.info) + list(at.success) + list(at.error) + list(at.caption))
-        assert "Agent 1" in text and "Débrancher la borne négative" in text and "guide_available" in text and "Coupez le contact" in text
+        text = " ".join(m.value for m in list(at.markdown) + list(at.metric) + list(at.info) + list(at.success) + list(at.error) + list(at.caption))
+        # the three cards and the three sections each show their own output
+        assert "Agent 1" in text and "Agent 2" in text and "Agent 3" in text
+        assert "Batterie faible" in text  # Agent 1's class, in French
+        assert "Débrancher la borne négative" in text and "guide_available" in text and "Coupez le contact" in text
+        assert "Ce que l'Agent 2 a transmis" in " ".join(e.label for e in at.expander)
 
 
 def test_unusable_recording_asks_for_a_new_one():
     with patch("requests.post", lambda *a, **k: FakeResponse({"needs_new_audio": True, "message": "refaites un enregistrement"})):
-        at = AppTest.from_file(APP, default_timeout=30).run()
-        at.toggle[0].set_value(True)
-        at.run()
-        click(at, "Lancer la chaîne")
-        at.run()
+        at = open_page()
+        run_agents(at)
         assert not at.exception and any("refaites un enregistrement" in w.value for w in at.warning)
+
+
+def test_agent3_can_be_asked_before_the_checks_are_answered():
+    a3 = {"guide": {"status": "diagnosis_only", "fault": {"name": "Batterie"}, "safety_warnings": [], "repair_guide": {"steps": []}, "limitations": []},
+          "validation": {"valid": True, "citations_valid": True, "safety_passed": True}}
+    sent = []
+
+    def fake_post(url, **kw):
+        sent.append((url, kw))
+        return FakeResponse(PASS1) if "5678" in url else FakeResponse(a3)
+
+    with patch("requests.post", fake_post):
+        at = open_page()
+        run_agents(at)  # pass 1: checks pending, so Agent 3 has not been called
+        assert not at.exception and len(sent) == 1
+        click(at, "Demander le guide à l'Agent 3 maintenant (diagnostic provisoire)")
+        at.run()
+        assert not at.exception and len(sent) == 2 and "8003" in sent[1][0]
+        assert sent[1][1]["json"]["case_record"]["diagnosis"]["status"] == "probable"  # valid Agent 3 input, not conclusive yet
+        assert any("diagnosis_only" in s.value for s in list(at.warning) + list(at.success))
