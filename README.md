@@ -26,35 +26,20 @@ Telegram ─► n8n ─► Agent 1 (audio model, FastAPI) ─► Agent 2 (LLM + 
 | `data/` | everyone | download scripts and dataset list. **Raw data is not in git.** |
 | `report/` | everyone | report, slides, demo video link |
 
-## Quick start
+## Install and run
 
-Requirements: Git, Python 3.10+, Docker Desktop, ffmpeg.
-
-```bash
-git clone <repo-url>
-cd car-sound-doctor
-cp .env.example .env          # then fill in your own keys (never commit .env)
-
-# data (see data/DATASETS.md)
-cd data
-python download_rag.py        # RAG corpus (groups B and C)
-python download_external.py   # audio datasets (group A, needs a Kaggle token)
-cd ..
-
-# start everything: n8n, Qdrant, audio service, RAG service
-docker compose up --build
-```
+**Follow [INSTALL.md](INSTALL.md)** (Windows, PowerShell): one setup script (`scripts/setup_demo_pc.ps1`), one start script
+(`agent2_diagnosis/start_full_chain.ps1`), then import `n8n/workflows/full_chain_groq.json` and `n8n/workflows/telegram_front.json` in n8n.
 
 | Service | URL |
 |---|---|
 | n8n | http://localhost:5678 |
-| Audio service (Agent 1) | http://localhost:8001/docs |
-| RAG search service | http://localhost:8002/docs |
-| Qdrant dashboard | http://localhost:6333/dashboard |
+| Agent 1, audio (FastAPI) | http://localhost:8001/docs |
+| RAG search of Agent 2 | http://localhost:8002/docs |
+| Agent 3, repair guide (FastAPI) | http://localhost:8003/docs |
+| Test page of the three agents | http://localhost:8501 |
 
-Both services start in **mock mode** (`MOCK_MODE=true`): they return valid example answers from
-`contracts/examples/`. This lets group C build the whole n8n flow from day one, before the real
-models exist. Each group switches its service to real mode when ready.
+Check: `python agent2_diagnosis/tests/preflight.py`, then `python agent2_diagnosis/tests/live_check.py` (PASS/FAIL per agent).
 
 ## How we work
 
@@ -76,8 +61,7 @@ Task board: shared artifact link (ask C2).
 
 ## Deliverables (due 2 days before the validation)
 
-- [ ] exported n8n workflow + this repository with install instructions
-- [ ] technical report, 8 pages max (`report/`)
-- [ ] prompt library as annex (`prompts/`)
-- [ ] PowerPoint presentation
-- [ ] demo video, 5 minutes max
+- [x] exported n8n workflows (`n8n/workflows/`) + this repository with install instructions (`INSTALL.md`)
+- [x] technical report, 8 pages max, with the prompt library as annex A (`prompts/PROMPT_LIBRARY.md` is the source)
+- [x] PowerPoint presentation
+- [x] demo video, 5 minutes max (intro and closing clips in `docs/video/`, logo in `docs/logo/`)
