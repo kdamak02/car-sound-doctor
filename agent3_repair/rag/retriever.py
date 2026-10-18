@@ -66,6 +66,9 @@ class RAGRetriever:
         fault_query = f"{primary_cause} {audio_class}".lower()
         system = ""
         for cue, category in (
+            # starting faults first: Agent 1 says "bad_ignition" for a starter that only clicks, and "ignition" would pick spark-plug guides
+            ("starter", "electrical"), ("démarreur", "electrical"), ("demarreur", "electrical"), ("solenoid", "electrical"),
+            ("solénoïde", "electrical"), ("batter", "electrical"), ("dead_battery", "electrical"),
             ("belt", "belt"), ("brake", "brake"), ("steer", "steering"),
             ("wheel", "wheel"), ("transmission", "transmission"),
             ("misfire", "misfire"), ("injector", "fuel"),
