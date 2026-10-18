@@ -3,9 +3,9 @@
 Replaces the Agent 2 only script in `DEMO.md` for the defense. Facts were measured on one PC; numbers are in `HANDOVER.md` and `tests/eval_results.md`.
 
 ## A. One or two days before
-- [ ] **Recording**: get the demo recording from group A (starter problem, context `startup`). Run it once through `POST /webhook/agent2-diagnose-audio` and check the label, confidence and unusualness. Keep a backup recording and the result.
+- [ ] **Engine recording**: group A prepares it (starter problem, context `startup`); ask them for it. Run it once through `POST /webhook/agent2-diagnose-audio` and check the label, confidence and unusualness. Keep their backup recording and the result.
 - [ ] **Real bot**: create it with @BotFather, put the token in the root `.env` (`TELEGRAM_BOT_TOKEN=`; `TELEGRAM_API_BASE` must NOT be set), recreate n8n, activate `telegram_front.json` and one `full_chain_*.json` (steps in `n8n/telegram_front/README.md`). Do a full conversation from your phone.
-- [ ] **Pre-record the backup**: screen recording of one successful conversation (Telegram on the phone mirrored, or the test page in "Chaîne complète" mode), 3 to 4 minutes, sped up while waiting. Save it on the laptop and on a USB stick.
+- [ ] **No recording is made** (decision): plan B is the saved transcript `DEMO_TRANSCRIPT.md` on a slide, the test page in "Chaîne complète" mode (same chain, no phone) and the offline tests run live.
 - [ ] **Model choice** (decide now, write it down):
   - Groq `gpt-oss-120b`: best quality, about 35-60 s per pass, but 200,000 tokens per day shared by the team. Run no test batches in the 24 h before.
   - Ollama `qwen2.5:7b`: no quota, 40-70 s per pass with the RAG on the CPU (reranker on the GPU conflicts with Ollama's memory). Workable but weaker answers.
@@ -18,7 +18,7 @@ Replaces the Agent 2 only script in `DEMO.md` for the defense. Facts were measur
 2. `.\agent2_diagnosis\start_full_chain.ps1 -Python "<python>" -RagDevice cuda` (Groq) or `-RagDevice cpu` (Ollama). Wait for "up" on all five.
 3. `python agent2_diagnosis/tests/preflight.py`: must print "Ready". It checks the services, that both webhooks are active, the Groq budget of the three models, and the settings.
 4. **Warm up once**, because the first analysis after a start loads the models (Agent 1 up to a minute, Ollama 20-30 s): send your demo recording through the bot, answer the checks, wait for the guide. Then `/annuler`.
-5. Close everything else (browser tabs, games). Put the phone on do-not-disturb. Open: the phone chat, the n8n canvas (execution view), `tests/eval_results.md`, the backup video.
+5. Close everything else (browser tabs, games). Put the phone on do-not-disturb. Open: the phone chat, the n8n canvas (execution view), `tests/eval_results.md`, `DEMO_TRANSCRIPT.md`, the test page (full-chain mode).
 6. **From now on: never restart n8n, the RAG, Ollama or Agent 1.** A restart during a run makes the run fail.
 
 ## C. The demo (about 6 minutes)
@@ -40,10 +40,10 @@ If the manuals do not cover a noise, the bot says it will not invent an answer: 
 | Symptom | Do |
 |---|---|
 | The bot does not answer | Say "the polling bot checks every 5 s"; wait 10 s. Still nothing: `preflight.py`; is the front workflow active? |
-| "service n'a pas pu répondre" | Almost always the Groq quota or a model down. Switch to the Ollama full-chain workflow (deactivate one, activate the other; 1 minute) or play the backup video. |
-| More than 3 minutes of silence | Say "it is on CPU, this is the slow part", wait one more minute, then the backup video. |
+| "service n'a pas pu répondre" | Almost always the Groq quota or a model down. Switch to the Ollama full-chain workflow (deactivate one, activate the other; 1 minute) or show `DEMO_TRANSCRIPT.md` and the test page. |
+| More than 3 minutes of silence | Say "it is on CPU, this is the slow part", wait one more minute, then switch to the test page or show `DEMO_TRANSCRIPT.md`. |
 | Agent 3 gives a generic guide | Be honest: "its corpus is still generic for this fault; the validator accepted it because the sources are cited; improving the corpus is the next step." Do not claim more. |
-| Docker or n8n crashed | Backup video + show `pytest` and the Node tests running live (offline, seconds) as proof the logic is tested. |
+| Docker or n8n crashed | `DEMO_TRANSCRIPT.md` + show `pytest` and the Node tests running live (offline, seconds) as proof the logic is tested. |
 | A jury question you cannot answer | "That is not measured; here is what we measured instead." Never invent a number. |
 
 ## E. Likely questions (short, honest answers)
@@ -56,4 +56,4 @@ If the manuals do not cover a noise, the bot says it will not invent an answer: 
 - *Privacy?* Voice notes are processed locally by Agent 1; the text goes to the chosen LLM provider (Groq/Gemini) or stays local with Ollama.
 
 ## F. After the demo
-`/annuler` in the bot, keep the logs, note what failed for the report. Do not delete the backup video.
+`/annuler` in the bot, keep the logs, note what failed for the report.
