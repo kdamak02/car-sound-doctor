@@ -81,8 +81,9 @@ if os.getenv("LLM", "gemini") == "ollama" and os.getenv("MODE", "tool") == "tool
 SUPPORT = os.getenv("SUPPORT_CHECK", "true").lower()  # citation support check through the reranker; SUPPORT_CHECK=false skips it
 POSTPROCESS = (f"const SUPPORT = {SUPPORT};\nconst LABELS = {json.dumps(LABELS, ensure_ascii=False)};\n\n" + src("agent2_postprocess.js") +
                "\nconst ctx = $('Prepare input').first().json.ctx;\n"
+               "// support check: search without the reranker threshold (a long table chunk can score low and a check must not veto correct answers)\n"
                "const search = (query, filters, top_k) => this.helpers.httpRequest({\n"
-               f"  method: 'POST', url: {json.dumps(RAG_URL)}, body: {{ query, filters, top_k, rerank: true }}, json: true }});\n"
+               f"  method: 'POST', url: {json.dumps(RAG_URL)}, body: {{ query, filters, top_k, rerank: false }}, json: true }});\n"
                f"const answer = {AGENT_OUT};\n"
                "const checked = SUPPORT ? await supportFilter(answer, search, JSON.parse($('Prepare input').first().json.filters_json), 3, ($('Prepare input').first().json.queries || [''])[0]) : answer;\n"
                "return { json: postprocess(ctx, checked, LABELS) };\n")
@@ -128,7 +129,7 @@ if LLM == "ollama":
 elif LLM == "groq":
     LLM_NAME = "Groq Chat Model"  # credential "Groq account": Groq API key (same key as Agent 3)
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGroq", 1,
-                    {"model": os.getenv("GROQ_MODEL_A2", "openai/gpt-oss-120b"), "options": {"temperature": 0.2, "maxTokensToSample": 1500}}, [440, 340])  # free tier: 8000 tokens per minute
+                    {"model": os.getenv("GROQ_MODEL_A2", "openai/gpt-oss-120b"), "options": {"temperature": 0.2, "maxTokensToSample": 4000}}, [440, 340])  # free tier: 8000 tokens per minute
 else:
     LLM_NAME = "Gemini Chat Model"
     LLM_NODE = node(LLM_NAME, "@n8n/n8n-nodes-langchain.lmChatGoogleGemini", 1,
