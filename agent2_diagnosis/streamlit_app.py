@@ -168,7 +168,7 @@ with st.sidebar:
     url = st.text_input("Webhook Agent 2 (n8n)", DEFAULT_URL)
     timeout = st.slider("Délai max (secondes)", 30, 400, 300)
     st.caption("Un appel dure de 40 secondes à 2 minutes et demie (modèle local + reranker sur CPU). Avec Gemini : 3 à 4 requêtes du quota gratuit.")
-    full = st.toggle("Chaîne complète : Agent 1 + 2 + 3", value=False,
+    full = st.toggle("Chaîne complète : Agent 1 + 2 + 3", value=os.getenv("AGENT2_FULL_CHAIN") == "1",  # start_full_chain.ps1 sets it
                      help="Envoie la note vocale à n8n (entrée audio) : Agent 1 analyse le son, Agent 2 diagnostique, Agent 3 écrit le guide. "
                           "Demande le workflow construit avec AGENT1=true AGENT3=true, Agent 1 sur :8001 et Agent 3 sur :8003.")
     st.divider()

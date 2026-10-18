@@ -333,7 +333,8 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
     if conclusive:
         checks = []  # contract: empty when conclusive
     lang = ((case.get("user_input") or {}).get("language") or "fr")
-    message = raw.get("message_to_user") if isinstance(raw.get("message_to_user"), str) else ""
+    # small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
+    message = raw["message_to_user"].replace("\\n", "\n") if isinstance(raw.get("message_to_user"), str) else ""
     out = {"pass": n, "causes": causes, "checks": checks, "conclusive": conclusive,
            "message_to_user": message or (DEFAULT_MESSAGE.get(lang, DEFAULT_MESSAGE["en"]) if checks else ""),
            # most likely cause decides (same as the team guardrail); less likely risky causes get a caution in the message (P4/P5)

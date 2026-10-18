@@ -44,6 +44,13 @@ Regenerate any of them: `AGENT1=true AGENT3=true LLM=ollama|groq RAG_URL=http://
 
 ## 3. Try it
 
+**Quickest: test all three agents together** (stack running, one `full_chain_*` workflow active, e.g. `full_chain_groq.json` or `full_chain_ollama.json`):
+```bash
+python agent2_diagnosis/tests/preflight.py     # everything up? webhooks active? Groq budget?
+python agent2_diagnosis/tests/live_check.py    # voice clip -> Agent 1 -> Agent 2 (2 passes) -> Agent 3: PASS/FAIL per agent, about 1 minute on Groq
+```
+or open the test page (http://localhost:8501, started by `start_full_chain.ps1` in full-chain mode): upload `data/audio/demo_clips/demo_failed_start.ogg`, press "Lancer la chaîne", answer the checks, press "Envoyer mes réponses". **Measured** on 2026-10-18 (Groq `gpt-oss-120b`): `live_check.py` ALL PASS in about 40 s; the same flow through the page with a real browser upload showed Agent 1's card, pass 1 with four cited checks, pass 2 conclusive and Agent 3's guide (validation OK, but generic).
+
 ```bash
 # the whole chain, one call per pass (a voice note + the case; pass 1 asks checks)
 curl -X POST localhost:5678/webhook/agent2-diagnose-audio -F audio=@note.ogg -F "case=<agent2_diagnosis/tests/cases/clio_starter_pass1.json"
