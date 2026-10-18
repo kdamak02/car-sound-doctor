@@ -163,3 +163,13 @@ Agent 2's manuals do not cover belt noise (group B removed those cases). Use a c
 Agent 1 knows: **starting problem / weak battery** (`dead_battery`, F1 0.74, context `startup`), e.g. the Clio case
 of `agent2_diagnosis/tests/cases/clio_starter_pass1.json`. Check the real Agent 1 output on the demo recording
 before the defense (label, confidence, anomaly score) and keep a backup recording.
+
+## 8. Changes of 2026-10-18 (answers to `agent2_diagnosis/NOTE_FOR_AGENT1.md`)
+
+| Problem found by B2 | Fix |
+|---|---|
+| a person speaking was analysed as an engine (`speech_ratio` always 0) | Silero VAD (ONNX, MIT, `agent1_audio/vad/`) fills `description.speech_ratio`; >= 0.35 -> `status = unusable_audio` + "record the engine without talking"; 0.10-0.35 -> a warning. Measured: 7 speech clips 0.41-0.85 (clean and Opus 16k), 47 engine clips of our val/test sets 0.00 (max 0.24, a YouTube clip with a voice-over): 0 errors on 50 through `/analyze` |
+| first analysis 50-100 s (n8n timeout 90 s) | the service now runs one full analysis at start-up, BEFORE accepting requests; `/health` answers `{"ready": true, "warmup_s": ...}` once done |
+| Opus compression flips 1.5 s `dead_battery` clips to `normal_startup` | known limit (section 6 of the report); not fixed: needs more real recordings. Use 5-10 s recordings and the context; `failed_start_0002-0004` stay stable |
+
+Needs `onnxruntime` (added to `requirements-real.txt`; `start_agent1.ps1` installs what is missing at every start). Without it (mock mode, CI) the detection is skipped.

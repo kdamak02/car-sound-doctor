@@ -7,4 +7,5 @@ soundfile
 librosa>=0.10
 scikit-learn>=1.4
 joblib
+onnxruntime      # speech detection (Silero VAD, agent1_audio/vad/)
 imageio-ffmpeg   # ffmpeg for Telegram OGG/Opus when it is not installed on the machine

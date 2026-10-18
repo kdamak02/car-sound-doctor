@@ -64,8 +64,16 @@ def analyze_direct(path, context):
         return {"status": "unusable_audio", "label": None, "context": "unknown", "top3": [],
                 "anomaly_score": 0.0, "confidence": "low", "description": desc,
                 "model_version": "n/a", "warnings": [f"Recording shorter than {MIN_DURATION_S} seconds."]}
+    from src import vad
+    speech = vad.speech_ratio(x)
+    if speech is not None:
+        desc["speech_ratio"] = speech
+        if speech >= vad.SPEECH_REJECT:
+            return {"status": "unusable_audio", "label": None, "context": "unknown", "top3": [],
+                    "anomaly_score": 0.0, "confidence": "low", "description": desc, "model_version": "n/a",
+                    "warnings": [f"Speech detected in {speech:.0%} of the recording: record the engine without talking."]}
     out = direct_model().predict(x, context=context)
-    out["description"] = {**desc, **out.get("description", {})}
+    out["description"] = {**out.get("description", {}), **desc}
     return out
 
 

@@ -19,7 +19,9 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 CLIPS = ROOT / "data/audio/demo_clips"
-SPEECH = Path(r"C:\Users\Msi Katana\Desktop\PI\callverse\datasets\CREMA-D\AudioWAV\1001_DFA_NEU_XX.wav")  # a person speaking, no engine
+SPEECH = CLIPS / "speech_1001_DFA_NEU_XX.wav"  # CREMA-D sentence, a person speaking, no engine (scripts/setup_demo_pc.ps1 downloads it)
+if not SPEECH.exists():
+    SPEECH = Path(r"C:\Users\Msi Katana\Desktop\PI\callverse\datasets\CREMA-D\AudioWAV\1001_DFA_NEU_XX.wav")
 N8N = "http://localhost:5678/webhook"
 CLIO = {"make": "Renault", "model": "Clio", "year": 2015, "fuel": "diesel", "mileage_km": None}
 

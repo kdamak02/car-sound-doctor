@@ -11,8 +11,9 @@ foreach ($m in "models\agent1_ast.joblib", "models\agent1_ae.pt") {
 }
 if (-not (Test-Path ".venv-agent1")) {
     python -m venv .venv-agent1
-    .\.venv-agent1\Scripts\python.exe -m pip install -r agent1_audio\requirements-real.txt --extra-index-url https://download.pytorch.org/whl/cpu
 }
+# every start: installs what is missing (first time ~10 min; afterwards a few seconds)
+.\.venv-agent1\Scripts\python.exe -m pip install -q -r agent1_audio\requirements-real.txt --extra-index-url https://download.pytorch.org/whl/cpu
 $env:MOCK_MODE = "false"
 $env:HF_HUB_DISABLE_SYMLINKS_WARNING = "1"
 Set-Location agent1_audio
