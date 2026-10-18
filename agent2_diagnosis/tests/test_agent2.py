@@ -52,7 +52,8 @@ def test_pass1_grounded_and_valid():
     out = agent2.diagnose(fresh_case(), llm=llm_returning(GOOD), search=search)
     assert errors("agent2_output", out) == []
     assert [c["name"] for c in out["causes"]] == ["Courroie usée", "Direction assistée"]  # invented + uncited dropped
-    assert abs(sum(c["prob"] for c in out["causes"]) - 1) < 0.01
+    # raw probabilities 7, 1, 5 (invented, uncited), 5 (uncited): the dropped causes keep their share, it is NOT handed to the survivors
+    assert [c["prob"] for c in out["causes"]] == [0.389, 0.056]
     assert [c["id"] for c in out["checks"]] == ["c1", "c2", "c3"]  # uncited check dropped, ids sequential
     assert out["checks"][2]["answer_type"] == "free_text"  # choice without choices falls back
     assert out["pass"] == 1 and out["conclusive"] is False
@@ -213,3 +214,28 @@ def test_support_check_drops_cause_whose_citation_does_not_come_back():
     search = lambda q, v, k: {"passages": [{"chunk_id": "b"}] if q == "battery" else []}  # noqa: E731
     kept = agent2.supported_causes(raw, by_id, {}, search)
     assert [c["name"] for c in kept] == ["battery"]
+
+
+def test_a_lone_surviving_cause_is_not_shown_as_100_percent():
+    """Regression: dropping uncited causes used to re-normalise the survivor to 100 %. Now it keeps its own share, never above 95 %."""
+    three = {"causes": [{"name": "Manque d'huile", "label": "low_oil", "prob": 0.5, "evidence": ["e"], "sources": [P1]},
+                        {"name": "Autre", "label": None, "prob": 0.3, "evidence": [], "sources": []},
+                        {"name": "Encore", "label": None, "prob": 0.2, "evidence": [], "sources": ["not_a_chunk"]}], "checks": [], "message_to_user": ""}
+    out = agent2.diagnose(fresh_case(), llm=llm_returning(three), search=search)
+    assert [c["prob"] for c in out["causes"]] == [0.5] and out["conclusive"] is False  # 0.5 < 0.6: not conclusive, not 100 %
+    one = {"causes": [{"name": "Manque d'huile", "label": "low_oil", "prob": 1.0, "evidence": ["e"], "sources": [P1]}], "checks": [], "message_to_user": ""}
+    assert agent2.diagnose(fresh_case(), llm=llm_returning(one), search=search)["causes"][0]["prob"] == 0.95  # ceiling
+
+
+def test_evidence_limits_whatever_the_model_says():
+    """Regression of the scenarios: an unknown car (no exact-model manual) and a healthy-sounding engine can never give a firm fault."""
+    firm = {"causes": [{"name": "Démarreur", "label": None, "prob": 0.95, "evidence": ["e"], "sources": [P1]}], "checks": [], "message_to_user": "Faites contrôler le démarreur."}
+    general = lambda q, v, k, **kw: {**search(q, v, k), "fallback_level": "generic"}  # noqa: E731
+    out = agent2.diagnose(fresh_case(), llm=llm_returning(firm), search=general)
+    assert out["causes"][0]["prob"] == 0.7 and "aucun manuel de ce modèle exact" in out["message_to_user"]  # capped and flagged by code
+    healthy = fresh_case()
+    healthy["audio"] = {"status": "ok", "label": "normal_startup", "context": "startup", "anomaly_score": 0.6, "confidence": "high", "top3": [{"label": "normal_startup", "prob": 0.9}],
+                        "description": {"summary": "s"}, "warnings": []}
+    out = agent2.diagnose(healthy, llm=llm_returning(firm), search=search)
+    assert out["causes"][0]["prob"] == 0.5 and out["conclusive"] is False  # Agent 1 hears a healthy engine: no firm fault
+    assert agent2.healthy_audio(healthy["audio"]) and not agent2.healthy_audio({**healthy["audio"], "anomaly_score": 0.9})

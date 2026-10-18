@@ -46,6 +46,19 @@ MAX_ROUNDS = 2  # case_record.round cap
 CONCLUSIVE_PROB, CONCLUSIVE_GAP = 0.6, 0.2
 SUPPORT_CHECK = os.getenv("AGENT2_SUPPORT_CHECK", "true").lower() == "true"  # drop causes whose cited passages the reranker does not tie to the cause
 CONTRADICTED_MAX = 0.05  # probability cap of a cause the driver's answers contradict (status field of P5)
+PROB_CEILING = 0.95  # no cause is shown above this: reading a manual does not prove a cause
+NON_EXACT_MAX = 0.7  # no manual of this exact model: the answer rests on other vehicles, so no firm cause
+HEALTHY_MAX = 0.5  # Agent 1 hears a healthy engine (normal class, unusualness < 0.8): no firm fault
+GENERAL_NOTE = {"fr": "Attention : aucun manuel de ce modèle exact n'a été trouvé, la réponse repose sur des informations générales ou d'autres véhicules.",
+                "en": "Careful: no manual for this exact model was found, the answer rests on general information or other vehicles."}
+GENERAL_ANSWER = re.compile(r"g[ée]n[ée]ral|ce mod[èe]le exact|mod[èe]le exact|general information|exact model", re.I)
+
+
+def healthy_audio(audio) -> bool:
+    """Agent 1's reading guide: a normal class with an unusualness under 0.80 means the engine probably sounds healthy."""
+    a = audio or {}
+    score = a.get("anomaly_score")
+    return a.get("status") == "ok" and str(a.get("label") or "").startswith("normal") and score is not None and score < 0.80 and a.get("confidence") != "low"
 LEVELS = ["exact_model", "make", "generic", "none"]
 # R3 words, same as agent3_repair/guardrails/checks.py, plus oil pressure. Applied to the top cause's name and label.
 SAFETY_WORDS = re.compile(r"frein|brake|direction|steering|surchauffe|overheat|temp[ée]rature|oil pressure|"
@@ -261,25 +274,34 @@ def supported_causes(raw, by_id: dict, case: dict, search, top: int = 3) -> list
     return keep
 
 
-def build_causes(raw, by_id: dict, lang: str = "fr") -> list[dict]:
+def cause_prob(c: dict) -> float:
+    """The model's probability for one cause (>= 0); a cause the driver's answers contradict is capped (P5 `status`)."""
+    try:
+        prob = max(float(c.get("prob", 0)), 0.0)
+    except (TypeError, ValueError):
+        prob = 0.0
+    if str(c.get("status", "")).lower() == "contradicted":  # P5: an answer shows it is not the cause
+        prob = min(prob, CONTRADICTED_MAX)
+    return prob
+
+
+def build_causes(raw, by_id: dict, lang: str = "fr", universe=None) -> list[dict]:
+    """Grounded causes with probabilities. `universe` = every cause the model proposed (before uncited or unsupported ones were dropped):
+    the probabilities are normalised over it, so dropping a cause does NOT hand its share to the survivors (a lone cause would show 100 %).
+    A contradicted cause still gives its share back, because the evidence says it. No cause is shown above PROB_CEILING."""
     out = []
     for c in raw or []:
         ids = [i for i in (clean_id(x) for x in c.get("sources") or []) if i in by_id]
         if not ids or not c.get("name"):
             continue  # uncited cause: dropped
-        try:
-            prob = max(float(c.get("prob", 0)), 0.0)
-        except (TypeError, ValueError):
-            prob = 0.0
-        if str(c.get("status", "")).lower() == "contradicted":  # P5: an answer shows it is not the cause
-            prob = min(prob, CONTRADICTED_MAX)
+        prob = cause_prob(c)
         label = c.get("label") if c.get("label") in KNOWN_LABELS else None
         out.append({"name": readable(str(c["name"]).strip(), label, lang), "label": label, "prob": prob,
                     "evidence": [str(e) for e in c.get("evidence") or []] + [f"passage {i}" for i in ids]})
     out = sorted(out, key=lambda c: -c["prob"])[:5]
-    total = sum(c["prob"] for c in out) or 1
+    total = sum(cause_prob(c) for c in (universe if universe is not None else raw or [])) or sum(c["prob"] for c in out) or 1
     for c in out:
-        c["prob"] = round(c["prob"] / total, 3)
+        c["prob"] = round(min(c["prob"] / total, PROB_CEILING), 3)
     return out
 
 
@@ -323,9 +345,12 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
     # vetoes correct answers is worse than a looser one; the cited passage must still come back in the top 8 for the cause + the symptom
     plain = (lambda q, v, k: rag_search(q, v, k, rerank=False)) if search is rag_search else search
     raw_causes = supported_causes(raw.get("causes"), by_id, case, plain) if SUPPORT_CHECK else raw.get("causes")
-    causes = build_causes(raw_causes, by_id, (case.get("user_input") or {}).get("language") or "fr")
+    causes = build_causes(raw_causes, by_id, (case.get("user_input") or {}).get("language") or "fr", universe=raw.get("causes"))
     if not causes:
         raise Insufficient("the passages support no cause (or the model cited none)")
+    cap = min(NON_EXACT_MAX if level != "exact_model" else 1.0, HEALTHY_MAX if healthy_audio(case.get("audio")) else 1.0)  # limits the evidence imposes, whatever the model says
+    for c in causes:
+        c["prob"] = min(c["prob"], cap)
 
     asked = sum(len(d["checks"]) for d in case.get("diagnosis") or [])
     checks = build_checks(raw.get("checks"), by_id, asked + 1, 5) if allow_new else []
@@ -335,6 +360,8 @@ def diagnose(case: dict, llm=ask, search=rag_search) -> dict:
     lang = ((case.get("user_input") or {}).get("language") or "fr")
     # small models often write the line break twice-escaped (a backslash and an n inside the text): make it a real line break
     message = raw["message_to_user"].replace("\\n", "\n") if isinstance(raw.get("message_to_user"), str) else ""
+    if level != "exact_model" and not GENERAL_ANSWER.search(message):  # guaranteed by code: the prompt asks for it but a small model forgets
+        message = (GENERAL_NOTE.get(lang, GENERAL_NOTE["en"]) + " " + message).strip()
     out = {"pass": n, "causes": causes, "checks": checks, "conclusive": conclusive,
            "message_to_user": message or (DEFAULT_MESSAGE.get(lang, DEFAULT_MESSAGE["en"]) if checks else ""),
            # most likely cause decides (same as the team guardrail); less likely risky causes get a caution in the message (P4/P5)
